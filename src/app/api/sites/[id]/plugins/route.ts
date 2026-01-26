@@ -21,7 +21,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Decrypt the password before using
-    const decryptedPassword = decrypt(site.apiPassword);
+    let decryptedPassword: string;
+    try {
+      decryptedPassword = decrypt(site.apiPassword);
+    } catch (decryptError) {
+      console.error("Decryption failed:", decryptError);
+      return NextResponse.json(
+        {
+          error: "Failed to decrypt credentials",
+          hint: "The ENCRYPTION_SECRET may have changed since the site was added. Try deleting and re-adding the site."
+        },
+        { status: 500 }
+      );
+    }
 
     const wp = new WordPressAPI({
       siteUrl: site.url,
@@ -29,7 +41,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       password: decryptedPassword,
     });
 
-    const wpPlugins = await wp.getPlugins();
+    let wpPlugins;
+    try {
+      wpPlugins = await wp.getPlugins();
+    } catch (wpError) {
+      console.error("WordPress API error:", wpError);
+      return NextResponse.json(
+        {
+          error: "WordPress API error",
+          details: wpError instanceof Error ? wpError.message : "Failed to connect to WordPress",
+          hint: "Make sure the Application Password is correct and the user has administrator privileges."
+        },
+        { status: 502 }
+      );
+    }
 
     // Clear existing plugins and insert fresh data
     await db.delete(plugins).where(eq(plugins.siteId, site.id));
@@ -57,7 +82,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   } catch (error) {
     console.error("Failed to fetch plugins:", error);
     return NextResponse.json(
-      { error: "Failed to fetch plugins" },
+      {
+        error: "Failed to fetch plugins",
+        details: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     );
   }

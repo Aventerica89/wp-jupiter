@@ -1,11 +1,32 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { sql } from "drizzle-orm";
 
-// GET /api/setup - Initialize database tables
-// Visit this endpoint once after deployment to create tables
-export async function GET() {
+// GET /api/setup?token=YOUR_ENCRYPTION_SECRET - Initialize database tables
+// Requires the ENCRYPTION_SECRET as a query parameter for security
+export async function GET(request: NextRequest) {
   try {
+    // Require authentication token
+    const token = request.nextUrl.searchParams.get("token");
+    const expectedToken = process.env.ENCRYPTION_SECRET;
+
+    if (!expectedToken) {
+      return NextResponse.json(
+        { error: "Server misconfigured: ENCRYPTION_SECRET not set" },
+        { status: 500 }
+      );
+    }
+
+    if (!token || token !== expectedToken) {
+      return NextResponse.json(
+        {
+          error: "Unauthorized",
+          hint: "Add ?token=YOUR_ENCRYPTION_SECRET to the URL"
+        },
+        { status: 401 }
+      );
+    }
+
     const db = getDb();
 
     // Create sites table

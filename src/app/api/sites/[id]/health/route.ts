@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sites } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { decrypt } from "@/lib/crypto";
 import { WordPressAPI } from "@/lib/wordpress";
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -18,10 +19,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Site not found" }, { status: 404 });
     }
 
+    // Decrypt the password before using
+    const decryptedPassword = decrypt(site.apiPassword);
+
     const wp = new WordPressAPI({
       siteUrl: site.url,
       username: site.apiUsername,
-      password: site.apiPassword,
+      password: decryptedPassword,
     });
 
     const health = await wp.checkHealth();

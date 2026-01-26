@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sites } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { encrypt } from "@/lib/crypto";
+import { createSiteSchema } from "@/lib/validations";
 
 // GET /api/sites - Get all sites
 export async function GET() {
@@ -13,9 +15,18 @@ export async function GET() {
       },
     });
 
-    // Calculate update counts for each site
+    // Calculate update counts and strip sensitive data
     const sitesWithCounts = allSites.map((site) => ({
-      ...site,
+      id: site.id,
+      name: site.name,
+      url: site.url,
+      wpVersion: site.wpVersion,
+      phpVersion: site.phpVersion,
+      status: site.status,
+      sslExpiry: site.sslExpiry,
+      lastChecked: site.lastChecked,
+      createdAt: site.createdAt,
+      updatedAt: site.updatedAt,
       pluginUpdates: site.plugins.filter((p) => p.updateAvailable).length,
       themeUpdates: site.themes.filter((t) => t.updateAvailable).length,
     }));
@@ -34,18 +45,22 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, url, apiUsername, apiPassword } = body;
 
-    if (!name || !url || !apiUsername || !apiPassword) {
+    // Validate input with Zod
+    const result = createSiteSchema.safeParse(body);
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Validation failed", details: result.error.flatten() },
         { status: 400 }
       );
     }
 
+    const { name, url, apiUsername, apiPassword } = result.data;
+
     // Check if site already exists
+    const normalizedUrl = url.replace(/\/$/, "");
     const existing = await db.query.sites.findFirst({
-      where: eq(sites.url, url),
+      where: eq(sites.url, normalizedUrl),
     });
 
     if (existing) {
@@ -55,16 +70,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Encrypt the password before storing
+    const encryptedPassword = encrypt(apiPassword);
+
     const [newSite] = await db
       .insert(sites)
       .values({
         name,
-        url: url.replace(/\/$/, ""), // Remove trailing slash
+        url: normalizedUrl,
         apiUsername,
-        apiPassword,
+        apiPassword: encryptedPassword,
         status: "unknown",
       })
-      .returning();
+      .returning({
+        id: sites.id,
+        name: sites.name,
+        url: sites.url,
+        status: sites.status,
+        createdAt: sites.createdAt,
+      });
 
     return NextResponse.json(newSite, { status: 201 });
   } catch (error) {

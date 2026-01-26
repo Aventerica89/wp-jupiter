@@ -1,5 +1,5 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // Sites table - stores WordPress site credentials and status
 export const sites = sqliteTable("sites", {
@@ -7,14 +7,14 @@ export const sites = sqliteTable("sites", {
   name: text("name").notNull(),
   url: text("url").notNull().unique(),
   apiUsername: text("api_username").notNull(),
-  apiPassword: text("api_password").notNull(), // WordPress Application Password
+  apiPassword: text("api_password").notNull(), // Encrypted WordPress Application Password
   wpVersion: text("wp_version"),
   phpVersion: text("php_version"),
   status: text("status", { enum: ["online", "offline", "unknown"] }).default("unknown"),
   sslExpiry: text("ssl_expiry"),
   lastChecked: text("last_checked"),
-  createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
-  updatedAt: text("updated_at").default("CURRENT_TIMESTAMP"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
 });
 
 // Plugins table - tracks plugins on each site
@@ -58,7 +58,7 @@ export const activityLog = sqliteTable("activity_log", {
   siteId: integer("site_id").references(() => sites.id, { onDelete: "cascade" }),
   action: text("action").notNull(),
   details: text("details"),
-  createdAt: text("created_at").default("CURRENT_TIMESTAMP"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
 });
 
 // Relations

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,7 +82,7 @@ export default function DashboardPage() {
             {syncing ? "Syncing..." : "Sync All"}
           </Button>
           <Button asChild>
-            <a href="/sites/new">Add Site</a>
+            <Link href="/sites/new">Add Site</Link>
           </Button>
         </div>
       </div>
@@ -155,13 +156,13 @@ export default function DashboardPage() {
             <div className="py-8 text-center">
               <p className="text-slate-500">No sites added yet.</p>
               <Button asChild className="mt-4">
-                <a href="/sites/new">Add Your First Site</a>
+                <Link href="/sites/new">Add Your First Site</Link>
               </Button>
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
               {sites.map((site) => (
-                <a
+                <Link
                   key={site.id}
                   href={`/sites/${site.id}`}
                   className="flex items-center justify-between py-4 hover:bg-slate-50 -mx-6 px-6 transition-colors"
@@ -188,7 +189,7 @@ export default function DashboardPage() {
                       {site.status}
                     </Badge>
                   </div>
-                </a>
+                </Link>
               ))}
             </div>
           )}

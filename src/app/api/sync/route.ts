@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sites, plugins, themes } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { decrypt } from "@/lib/crypto";
 import { WordPressAPI } from "@/lib/wordpress";
 
 // POST /api/sync - Sync all sites
@@ -11,10 +12,13 @@ export async function POST() {
 
     const results = await Promise.allSettled(
       allSites.map(async (site) => {
+        // Decrypt the password before using
+        const decryptedPassword = decrypt(site.apiPassword);
+
         const wp = new WordPressAPI({
           siteUrl: site.url,
           username: site.apiUsername,
-          password: site.apiPassword,
+          password: decryptedPassword,
         });
 
         // Check health

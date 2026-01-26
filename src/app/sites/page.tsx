@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,10 +62,10 @@ export default function SitesPage() {
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Sites</h1>
         <Button asChild>
-          <a href="/sites/new">
+          <Link href="/sites/new">
             <Plus className="mr-2 h-4 w-4" />
             Add Site
-          </a>
+          </Link>
         </Button>
       </div>
 
@@ -73,7 +74,7 @@ export default function SitesPage() {
           <CardContent className="py-12 text-center">
             <p className="text-slate-500">No sites added yet.</p>
             <Button asChild className="mt-4">
-              <a href="/sites/new">Add Your First Site</a>
+              <Link href="/sites/new">Add Your First Site</Link>
             </Button>
           </CardContent>
         </Card>
@@ -81,7 +82,7 @@ export default function SitesPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {sites.map((site) => (
             <Card key={site.id} className="group relative">
-              <a href={`/sites/${site.id}`} className="block">
+              <Link href={`/sites/${site.id}`} className="block">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-lg">{site.name}</CardTitle>
@@ -117,7 +118,7 @@ export default function SitesPage() {
                     </div>
                   </div>
                 </CardContent>
-              </a>
+              </Link>
               <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <Button
                   size="icon"

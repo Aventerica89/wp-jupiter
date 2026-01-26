@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -121,13 +122,13 @@ export default function SiteDetailPage({
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-8">
-        <a
+        <Link
           href="/sites"
           className="mb-4 inline-flex items-center text-sm text-slate-500 hover:text-slate-700"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
           Back to Sites
-        </a>
+        </Link>
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">{site.name}</h1>

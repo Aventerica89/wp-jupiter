@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sites, plugins } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { decrypt } from "@/lib/crypto";
 import { WordPressAPI } from "@/lib/wordpress";
+import { updatePluginSchema } from "@/lib/validations";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -18,10 +20,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Site not found" }, { status: 404 });
     }
 
+    // Decrypt the password before using
+    const decryptedPassword = decrypt(site.apiPassword);
+
     const wp = new WordPressAPI({
       siteUrl: site.url,
       username: site.apiUsername,
-      password: site.apiPassword,
+      password: decryptedPassword,
     });
 
     const wpPlugins = await wp.getPlugins();
@@ -58,19 +63,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// POST /api/sites/[id]/plugins - Update a plugin
+// POST /api/sites/[id]/plugins - Activate a plugin
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { pluginSlug } = body;
 
-    if (!pluginSlug) {
+    // Validate input with Zod
+    const result = updatePluginSchema.safeParse(body);
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Plugin slug required" },
+        { error: "Validation failed", details: result.error.flatten() },
         { status: 400 }
       );
     }
+
+    const { pluginSlug } = result.data;
 
     const site = await db.query.sites.findFirst({
       where: eq(sites.id, parseInt(id)),
@@ -80,22 +88,25 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Site not found" }, { status: 404 });
     }
 
+    // Decrypt the password before using
+    const decryptedPassword = decrypt(site.apiPassword);
+
     const wp = new WordPressAPI({
       siteUrl: site.url,
       username: site.apiUsername,
-      password: site.apiPassword,
+      password: decryptedPassword,
     });
 
-    const updated = await wp.updatePlugin(pluginSlug);
+    const activated = await wp.updatePlugin(pluginSlug);
 
     return NextResponse.json({
       success: true,
-      plugin: updated,
+      plugin: activated,
     });
   } catch (error) {
-    console.error("Failed to update plugin:", error);
+    console.error("Failed to activate plugin:", error);
     return NextResponse.json(
-      { error: "Failed to update plugin" },
+      { error: "Failed to activate plugin" },
       { status: 500 }
     );
   }

@@ -1,0 +1,124 @@
+# WP Manager - WordPress Site Dashboard
+
+A self-hosted WordPress site management dashboard, similar to MainWP but lightweight and built with modern tech.
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Database**: Turso (SQLite edge database)
+- **ORM**: Drizzle ORM
+- **UI**: Tailwind CSS + custom shadcn-style components
+- **Icons**: Lucide React
+- **Deployment**: Vercel (recommended)
+
+## Project Structure
+
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── api/               # API Routes
+│   │   ├── sites/         # Site CRUD + health/plugins endpoints
+│   │   └── sync/          # Bulk sync all sites
+│   ├── dashboard/         # Main dashboard page
+│   └── sites/             # Site management pages
+├── components/
+│   └── ui/                # Reusable UI components
+└── lib/
+    ├── db/                # Database client and schema
+    │   ├── index.ts       # Turso/Drizzle client
+    │   └── schema.ts      # Database schema definitions
+    ├── utils.ts           # Utility functions (cn)
+    └── wordpress.ts       # WordPress REST API client
+```
+
+## Database Schema
+
+- **sites**: WordPress site credentials and status
+- **plugins**: Installed plugins per site
+- **themes**: Installed themes per site
+- **wp_users**: WordPress users on remote sites
+- **activity_log**: Action tracking
+
+## Getting Started
+
+### 1. Set up Turso database
+
+```bash
+# Install Turso CLI
+curl -sSfL https://get.tur.so/install.sh | bash
+
+# Login
+turso auth login
+
+# Create database
+turso db create wp-manager
+
+# Get credentials
+turso db show wp-manager --url
+turso db tokens create wp-manager
+```
+
+### 2. Configure environment
+
+Copy `.env.example` to `.env.local` and fill in:
+
+```
+TURSO_DATABASE_URL=libsql://your-db.turso.io
+TURSO_AUTH_TOKEN=your-token
+```
+
+### 3. Run migrations
+
+```bash
+npm run db:push
+```
+
+### 4. Start development
+
+```bash
+npm run dev
+```
+
+## Commands
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run db:push` - Push schema changes to database
+- `npm run db:studio` - Open Drizzle Studio (database GUI)
+- `npm run db:generate` - Generate migration files
+
+## Adding a WordPress Site
+
+1. Go to your WordPress site
+2. Navigate to: Users → Profile → Application Passwords
+3. Create a new application password
+4. Add the site in WP Manager with the URL and credentials
+
+## API Endpoints
+
+- `GET /api/sites` - List all sites with update counts
+- `POST /api/sites` - Add a new site
+- `GET /api/sites/[id]` - Get site details with plugins/themes
+- `PUT /api/sites/[id]` - Update site
+- `DELETE /api/sites/[id]` - Delete site
+- `GET /api/sites/[id]/health` - Check site health
+- `GET /api/sites/[id]/plugins` - Sync and get plugins
+- `POST /api/sites/[id]/plugins` - Update a plugin
+- `POST /api/sync` - Sync all sites
+
+## MVP Features (Phase 1)
+
+- [x] Site management (add/edit/delete)
+- [x] Dashboard with status overview
+- [x] Plugin/theme listing with update status
+- [x] Health checks (online/offline status)
+- [x] Bulk sync functionality
+
+## Phase 2 (Planned)
+
+- [ ] Bulk plugin/theme updates
+- [ ] User management across sites
+- [ ] Activity logging
+- [ ] Scheduled syncing
+- [ ] Backup coordination
+- [ ] Security scanning

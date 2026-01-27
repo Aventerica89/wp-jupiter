@@ -11,6 +11,7 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
+  ArrowRight,
 } from "lucide-react";
 
 interface Site {
@@ -22,6 +23,32 @@ interface Site {
   lastChecked: string | null;
   pluginUpdates: number;
   themeUpdates: number;
+}
+
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  iconColor = "text-slate-400",
+}: {
+  title: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor?: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="mt-2 text-4xl font-semibold tracking-tight">{value}</p>
+          </div>
+          <Icon className={`h-5 w-5 ${iconColor}`} />
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function DashboardPage() {
@@ -66,19 +93,27 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-slate-500">Loading...</p>
+      <div className="p-8">
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="p-8">
+      {/* Header */}
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <div className="flex gap-2">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Overview of your WordPress sites
+          </p>
+        </div>
+        <div className="flex gap-3">
           <Button variant="outline" onClick={syncAllSites} disabled={syncing}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`}
+            />
             {syncing ? "Syncing..." : "Sync All"}
           </Button>
           <Button asChild>
@@ -87,89 +122,69 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats Grid */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
-              Total Sites
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-slate-400" />
-              <span className="text-2xl font-bold">{sites.length}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
-              Online
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span className="text-2xl font-bold">{onlineSites}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
-              Offline
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-red-500" />
-              <span className="text-2xl font-bold">{offlineSites}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
-              Updates Available
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-500" />
-              <span className="text-2xl font-bold">{totalUpdates}</span>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total Sites"
+          value={sites.length}
+          icon={Globe}
+          iconColor="text-slate-400"
+        />
+        <StatCard
+          title="Online"
+          value={onlineSites}
+          icon={CheckCircle}
+          iconColor="text-green-500"
+        />
+        <StatCard
+          title="Offline"
+          value={offlineSites}
+          icon={XCircle}
+          iconColor="text-red-500"
+        />
+        <StatCard
+          title="Updates Available"
+          value={totalUpdates}
+          icon={AlertCircle}
+          iconColor="text-amber-500"
+        />
       </div>
 
-      {/* Sites List */}
+      {/* Recent Sites */}
       <Card>
-        <CardHeader>
-          <CardTitle>Sites</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Recent Sites</CardTitle>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/sites">
+              View all
+              <ArrowRight className="ml-1 h-4 w-4" />
+            </Link>
+          </Button>
         </CardHeader>
         <CardContent>
           {sites.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-slate-500">No sites added yet.</p>
+              <p className="text-muted-foreground">No sites added yet.</p>
               <Button asChild className="mt-4">
                 <Link href="/sites/new">Add Your First Site</Link>
               </Button>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
-              {sites.map((site) => (
+            <div className="divide-y">
+              {sites.slice(0, 5).map((site) => (
                 <Link
                   key={site.id}
                   href={`/sites/${site.id}`}
-                  className="flex items-center justify-between py-4 hover:bg-slate-50 -mx-6 px-6 transition-colors"
+                  className="flex items-center justify-between py-4 hover:bg-slate-50 -mx-6 px-6 transition-colors first:pt-0 last:pb-0"
                 >
-                  <div>
-                    <p className="font-medium text-slate-900">{site.name}</p>
-                    <p className="text-sm text-slate-500">{site.url}</p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+                      <Globe className="h-5 w-5 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{site.name}</p>
+                      <p className="text-sm text-muted-foreground">{site.url}</p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     {site.pluginUpdates + site.themeUpdates > 0 && (
@@ -182,8 +197,8 @@ export default function DashboardPage() {
                         site.status === "online"
                           ? "success"
                           : site.status === "offline"
-                          ? "destructive"
-                          : "secondary"
+                            ? "destructive"
+                            : "secondary"
                       }
                     >
                       {site.status}
@@ -193,6 +208,20 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            {sites.length === 0
+              ? "Add your first WordPress site to get started."
+              : `Manage ${sites.length} site${sites.length !== 1 ? "s" : ""} from your dashboard.`}
+          </p>
         </CardContent>
       </Card>
     </div>

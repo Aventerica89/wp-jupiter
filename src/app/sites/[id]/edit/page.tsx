@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import { Save, Trash2, Settings } from "lucide-react";
 
 interface Site {
   id: number;
@@ -97,127 +97,123 @@ export default function EditSitePage({
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-slate-500">Loading...</p>
+      <div className="p-8">
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
   if (!site) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-slate-500">Site not found</p>
+      <div className="p-8">
+        <p className="text-muted-foreground">Site not found</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="p-8">
+      {/* Header */}
       <div className="mb-8">
-        <Link
-          href={`/sites/${id}`}
-          className="mb-4 inline-flex items-center text-sm text-slate-500 hover:text-slate-700"
-        >
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          Back to Site
-        </Link>
-        <h1 className="text-2xl font-bold text-slate-900">Edit Site</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Edit Site</h1>
+        <p className="text-muted-foreground">
+          Update settings for {site.name}
+        </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Site Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSave} className="space-y-4">
-            {error && (
-              <div className="rounded-md bg-red-50 p-3 text-sm text-red-600">
-                {error}
+      <div className="max-w-2xl">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+                <Settings className="h-5 w-5 text-slate-600" />
               </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-900">
-                Site Name
-              </label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="My WordPress Site"
-                required
-              />
+              <CardTitle>Site Settings</CardTitle>
             </div>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSave} className="space-y-4">
+              {error && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                  {error}
+                </div>
+              )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-900">
-                Site URL
-              </label>
-              <Input
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://example.com"
-                required
-              />
-            </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Site Name</label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="My WordPress Site"
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-900">
-                API Username
-              </label>
-              <Input
-                value={apiUsername}
-                onChange={(e) => setApiUsername(e.target.value)}
-                placeholder="admin"
-                required
-              />
-              <p className="text-xs text-slate-500">
-                WordPress username with admin access
-              </p>
-            </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Site URL</label>
+                <Input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://example.com"
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-900">
-                API Password / Secret Key
-              </label>
-              <Input
-                type="password"
-                value={apiPassword}
-                onChange={(e) => setApiPassword(e.target.value)}
-                placeholder="Leave blank to keep current"
-              />
-              <p className="text-xs text-slate-500">
-                Application Password or WP Manager Connector secret key. Leave
-                blank to keep the current value.
-              </p>
-            </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">API Username</label>
+                <Input
+                  value={apiUsername}
+                  onChange={(e) => setApiUsername(e.target.value)}
+                  placeholder="admin"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  WordPress username with admin access
+                </p>
+              </div>
 
-            <div className="flex items-center justify-between pt-4">
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={deleting}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {deleting ? "Deleting..." : "Delete Site"}
-              </Button>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">
+                  API Password / Secret Key
+                </label>
+                <Input
+                  type="password"
+                  value={apiPassword}
+                  onChange={(e) => setApiPassword(e.target.value)}
+                  placeholder="Leave blank to keep current"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Application Password or WP Manager Connector secret key. Leave
+                  blank to keep the current value.
+                </p>
+              </div>
 
-              <div className="flex gap-2">
-                <Link href={`/sites/${id}`}>
-                  <Button type="button" variant="outline">
-                    Cancel
-                  </Button>
-                </Link>
-                <Button type="submit" disabled={saving}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {saving ? "Saving..." : "Save Changes"}
+              <div className="flex items-center justify-between pt-4">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {deleting ? "Deleting..." : "Delete Site"}
                 </Button>
+
+                <div className="flex gap-3">
+                  <Button type="button" variant="outline" asChild>
+                    <Link href={`/sites/${id}`}>Cancel</Link>
+                  </Button>
+                  <Button type="submit" disabled={saving}>
+                    <Save className="mr-2 h-4 w-4" />
+                    {saving ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
               </div>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

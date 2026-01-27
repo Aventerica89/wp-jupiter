@@ -87,6 +87,36 @@ const statusConfig = {
   },
 };
 
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  iconColor = "text-slate-400",
+  valueColor = "",
+}: {
+  title: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor?: string;
+  valueColor?: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className={`mt-2 text-4xl font-semibold tracking-tight ${valueColor}`}>
+              {value}
+            </p>
+          </div>
+          <Icon className={`h-5 w-5 ${iconColor}`} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -128,8 +158,8 @@ export default function ActivityPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-slate-500">Loading activity...</p>
+      <div className="p-8">
+        <p className="text-muted-foreground">Loading activity...</p>
       </div>
     );
   }
@@ -159,12 +189,12 @@ export default function ActivityPage() {
   );
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="p-8">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Activity Log</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-semibold tracking-tight">Activity</h1>
+          <p className="text-muted-foreground">
             Track all actions across your sites
           </p>
         </div>
@@ -180,53 +210,28 @@ export default function ActivityPage() {
         </Button>
       </div>
 
-      {/* Summary Cards */}
+      {/* Stats Grid */}
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
-              Total Events
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-slate-400" />
-              <span className="text-2xl font-bold">{data?.pagination.total || 0}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
-              Successful
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span className="text-2xl font-bold text-green-600">
-                {statusCounts.success || 0}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
-              Failed
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-red-500" />
-              <span className="text-2xl font-bold text-red-600">
-                {statusCounts.failed || 0}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total Events"
+          value={data?.pagination.total || 0}
+          icon={Activity}
+          iconColor="text-slate-400"
+        />
+        <StatCard
+          title="Successful"
+          value={statusCounts.success || 0}
+          icon={CheckCircle}
+          iconColor="text-green-500"
+          valueColor="text-green-600"
+        />
+        <StatCard
+          title="Failed"
+          value={statusCounts.failed || 0}
+          icon={XCircle}
+          iconColor="text-red-500"
+          valueColor="text-red-600"
+        />
       </div>
 
       {/* Activity Timeline */}
@@ -239,7 +244,7 @@ export default function ActivityPage() {
         </CardHeader>
         <CardContent>
           {logs.length === 0 ? (
-            <p className="py-8 text-center text-slate-500">
+            <p className="py-8 text-center text-muted-foreground">
               No activity logged yet. Actions like syncing sites, health checks,
               and updates will appear here.
             </p>
@@ -247,7 +252,7 @@ export default function ActivityPage() {
             <div className="space-y-8">
               {Object.entries(groupedLogs).map(([date, dayLogs]) => (
                 <div key={date}>
-                  <h3 className="mb-4 text-sm font-medium text-slate-500">
+                  <h3 className="mb-4 text-sm font-medium text-muted-foreground">
                     {date}
                   </h3>
                   <div className="space-y-4">
@@ -256,7 +261,7 @@ export default function ActivityPage() {
                       return (
                         <div
                           key={log.id}
-                          className="flex items-start gap-4 rounded-lg border border-slate-100 p-4"
+                          className="flex items-start gap-4 rounded-lg border p-4"
                         >
                           <div
                             className={`flex h-10 w-10 items-center justify-center rounded-full ${config.bgColor} ${config.color}`}
@@ -267,7 +272,7 @@ export default function ActivityPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-slate-900">
+                              <span className="font-medium">
                                 {actionLabels[log.action] || log.action}
                               </span>
                               <Badge
@@ -275,24 +280,24 @@ export default function ActivityPage() {
                                   log.status === "success"
                                     ? "success"
                                     : log.status === "failed"
-                                    ? "destructive"
-                                    : "secondary"
+                                      ? "destructive"
+                                      : "secondary"
                                 }
                               >
                                 {log.status}
                               </Badge>
                             </div>
                             {log.details && (
-                              <p className="mt-1 text-sm text-slate-600">
+                              <p className="mt-1 text-sm text-muted-foreground">
                                 {log.details}
                               </p>
                             )}
-                            <div className="mt-2 flex items-center gap-4 text-xs text-slate-400">
+                            <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
                               <span>{formatRelativeTime(log.createdAt)}</span>
                               {log.siteName && (
                                 <Link
                                   href={`/sites/${log.siteId}`}
-                                  className="flex items-center gap-1 hover:text-blue-600"
+                                  className="flex items-center gap-1 hover:text-primary"
                                 >
                                   {log.siteName}
                                   <ExternalLink className="h-3 w-3" />

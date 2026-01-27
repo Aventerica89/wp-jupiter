@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UpdateTable } from "@/components/updates/update-table";
@@ -10,9 +9,9 @@ import {
   RefreshCw,
   Package,
   Palette,
-  ArrowLeft,
   Download,
   Globe,
+  AlertCircle,
 } from "lucide-react";
 
 interface PendingUpdate {
@@ -33,6 +32,32 @@ interface UpdateSummary {
   pluginUpdates: number;
   themeUpdates: number;
   siteCount: number;
+}
+
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  iconColor = "text-slate-400",
+}: {
+  title: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor?: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="mt-2 text-4xl font-semibold tracking-tight">{value}</p>
+          </div>
+          <Icon className={`h-5 w-5 ${iconColor}`} />
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function UpdatesPage() {
@@ -76,112 +101,69 @@ export default function UpdatesPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="h-6 w-6 animate-spin text-slate-400" />
-          <span className="ml-2 text-slate-500">Loading updates...</span>
+      <div className="p-8">
+        <div className="flex items-center gap-2">
+          <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+          <span className="text-muted-foreground">Loading updates...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="p-8">
       {/* Header */}
-      <div className="mb-8">
-        <Link
-          href="/dashboard"
-          className="mb-4 inline-flex items-center text-sm text-slate-500 hover:text-slate-700"
-        >
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          Back to Dashboard
-        </Link>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              Available Updates
-            </h1>
-            <p className="mt-1 text-slate-500">
-              Manage and apply updates across all your sites
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={syncAll} disabled={syncing}>
-              <RefreshCw
-                className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`}
-              />
-              {syncing ? "Syncing..." : "Sync All Sites"}
-            </Button>
-            <Button
-              onClick={() => setShowDialog(true)}
-              disabled={selectedIds.size === 0}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Update Selected ({selectedIds.size})
-            </Button>
-          </div>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Updates</h1>
+          <p className="text-muted-foreground">
+            Manage and apply updates across all your sites
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={syncAll} disabled={syncing}>
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`}
+            />
+            {syncing ? "Syncing..." : "Sync All"}
+          </Button>
+          <Button
+            onClick={() => setShowDialog(true)}
+            disabled={selectedIds.size === 0}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Update Selected ({selectedIds.size})
+          </Button>
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Stats Grid */}
       {summary && (
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">
-                Total Updates
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <span className="text-2xl font-bold">{summary.totalUpdates}</span>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">
-                Plugin Updates
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-slate-400" />
-                <span className="text-2xl font-bold">
-                  {summary.pluginUpdates}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">
-                Theme Updates
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Palette className="h-5 w-5 text-slate-400" />
-                <span className="text-2xl font-bold">
-                  {summary.themeUpdates}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">
-                Sites Affected
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-slate-400" />
-                <span className="text-2xl font-bold">{summary.siteCount}</span>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Total Updates"
+            value={summary.totalUpdates}
+            icon={AlertCircle}
+            iconColor="text-amber-500"
+          />
+          <StatCard
+            title="Plugin Updates"
+            value={summary.pluginUpdates}
+            icon={Package}
+            iconColor="text-blue-500"
+          />
+          <StatCard
+            title="Theme Updates"
+            value={summary.themeUpdates}
+            icon={Palette}
+            iconColor="text-purple-500"
+          />
+          <StatCard
+            title="Sites Affected"
+            value={summary.siteCount}
+            icon={Globe}
+            iconColor="text-slate-400"
+          />
         </div>
       )}
 

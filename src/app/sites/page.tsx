@@ -5,7 +5,15 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ExternalLink, Trash2 } from "lucide-react";
+import {
+  Plus,
+  ExternalLink,
+  Trash2,
+  Globe,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+} from "lucide-react";
 
 interface Site {
   id: number;
@@ -15,6 +23,32 @@ interface Site {
   wpVersion: string | null;
   pluginUpdates: number;
   themeUpdates: number;
+}
+
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  iconColor = "text-slate-400",
+}: {
+  title: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor?: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="mt-2 text-4xl font-semibold tracking-tight">{value}</p>
+          </div>
+          <Icon className={`h-5 w-5 ${iconColor}`} />
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function SitesPage() {
@@ -49,18 +83,31 @@ export default function SitesPage() {
     fetchSites();
   }, []);
 
+  const onlineSites = sites.filter((s) => s.status === "online").length;
+  const offlineSites = sites.filter((s) => s.status === "offline").length;
+  const totalUpdates = sites.reduce(
+    (sum, site) => sum + site.pluginUpdates + site.themeUpdates,
+    0
+  );
+
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-slate-500">Loading...</p>
+      <div className="p-8">
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="p-8">
+      {/* Header */}
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Sites</h1>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Sites</h1>
+          <p className="text-muted-foreground">
+            Manage your WordPress sites
+          </p>
+        </div>
         <Button asChild>
           <Link href="/sites/new">
             <Plus className="mr-2 h-4 w-4" />
@@ -69,10 +116,39 @@ export default function SitesPage() {
         </Button>
       </div>
 
+      {/* Stats Grid */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Sites"
+          value={sites.length}
+          icon={Globe}
+          iconColor="text-slate-400"
+        />
+        <StatCard
+          title="Online"
+          value={onlineSites}
+          icon={CheckCircle}
+          iconColor="text-green-500"
+        />
+        <StatCard
+          title="Offline"
+          value={offlineSites}
+          icon={XCircle}
+          iconColor="text-red-500"
+        />
+        <StatCard
+          title="Updates Available"
+          value={totalUpdates}
+          icon={AlertCircle}
+          iconColor="text-amber-500"
+        />
+      </div>
+
+      {/* Sites Grid */}
       {sites.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-slate-500">No sites added yet.</p>
+            <p className="text-muted-foreground">No sites added yet.</p>
             <Button asChild className="mt-4">
               <Link href="/sites/new">Add Your First Site</Link>
             </Button>
@@ -85,14 +161,24 @@ export default function SitesPage() {
               <Link href={`/sites/${site.id}`} className="block">
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg">{site.name}</CardTitle>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+                        <Globe className="h-5 w-5 text-slate-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">{site.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground truncate max-w-[180px]">
+                          {site.url}
+                        </p>
+                      </div>
+                    </div>
                     <Badge
                       variant={
                         site.status === "online"
                           ? "success"
                           : site.status === "offline"
-                          ? "destructive"
-                          : "secondary"
+                            ? "destructive"
+                            : "secondary"
                       }
                     >
                       {site.status}
@@ -100,28 +186,26 @@ export default function SitesPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="mb-4 text-sm text-slate-500 truncate">
-                    {site.url}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-2">
-                      {site.pluginUpdates > 0 && (
-                        <Badge variant="warning">
-                          {site.pluginUpdates} plugin updates
-                        </Badge>
-                      )}
-                      {site.themeUpdates > 0 && (
-                        <Badge variant="warning">
-                          {site.themeUpdates} theme updates
-                        </Badge>
-                      )}
-                    </div>
+                  <div className="flex items-center gap-2">
+                    {site.pluginUpdates > 0 && (
+                      <Badge variant="warning">
+                        {site.pluginUpdates} plugin{site.pluginUpdates !== 1 ? "s" : ""}
+                      </Badge>
+                    )}
+                    {site.themeUpdates > 0 && (
+                      <Badge variant="warning">
+                        {site.themeUpdates} theme{site.themeUpdates !== 1 ? "s" : ""}
+                      </Badge>
+                    )}
+                    {site.pluginUpdates === 0 && site.themeUpdates === 0 && (
+                      <span className="text-sm text-muted-foreground">Up to date</span>
+                    )}
                   </div>
                 </CardContent>
               </Link>
               <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <Button
-                  size="icon"
+                  size="icon-sm"
                   variant="ghost"
                   onClick={(e) => {
                     e.preventDefault();
@@ -131,7 +215,7 @@ export default function SitesPage() {
                   <ExternalLink className="h-4 w-4" />
                 </Button>
                 <Button
-                  size="icon"
+                  size="icon-sm"
                   variant="ghost"
                   onClick={(e) => deleteSite(site.id, e)}
                 >

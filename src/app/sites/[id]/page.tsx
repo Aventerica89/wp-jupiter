@@ -8,12 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import {
   RefreshCw,
   ExternalLink,
-  ArrowLeft,
   CheckCircle,
   XCircle,
   Package,
   Palette,
   Settings,
+  Globe,
+  Heart,
 } from "lucide-react";
 
 interface Plugin {
@@ -47,6 +48,32 @@ interface Site {
   lastChecked: string | null;
   plugins: Plugin[];
   themes: Theme[];
+}
+
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  iconColor = "text-slate-400",
+}: {
+  title: string;
+  value: string | number;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor?: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
+          </div>
+          <Icon className={`h-5 w-5 ${iconColor}`} />
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function SiteDetailPage({
@@ -102,16 +129,16 @@ export default function SiteDetailPage({
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-slate-500">Loading...</p>
+      <div className="p-8">
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
   if (!site) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <p className="text-slate-500">Site not found</p>
+      <div className="p-8">
+        <p className="text-muted-foreground">Site not found</p>
       </div>
     );
   }
@@ -120,113 +147,92 @@ export default function SiteDetailPage({
   const themesWithUpdates = site.themes.filter((t) => t.updateAvailable);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="p-8">
       {/* Header */}
-      <div className="mb-8">
-        <Link
-          href="/sites"
-          className="mb-4 inline-flex items-center text-sm text-slate-500 hover:text-slate-700"
-        >
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          Back to Sites
-        </Link>
-        <div className="flex items-start justify-between">
+      <div className="mb-8 flex items-start justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100">
+            <Globe className="h-6 w-6 text-slate-600" />
+          </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{site.name}</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{site.name}</h1>
             <a
               href={site.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center text-sm text-blue-600 hover:underline"
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-primary"
             >
               {site.url}
               <ExternalLink className="ml-1 h-3 w-3" />
             </a>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={checkHealth}
-              disabled={checkingHealth}
-            >
-              {checkingHealth ? "Checking..." : "Check Health"}
-            </Button>
-            <Button variant="outline" onClick={syncPlugins} disabled={syncing}>
-              <RefreshCw
-                className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`}
-              />
-              {syncing ? "Syncing..." : "Sync"}
-            </Button>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={checkHealth}
+            disabled={checkingHealth}
+          >
+            <Heart className={`mr-2 h-4 w-4 ${checkingHealth ? "animate-pulse" : ""}`} />
+            {checkingHealth ? "Checking..." : "Health Check"}
+          </Button>
+          <Button variant="outline" onClick={syncPlugins} disabled={syncing}>
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`}
+            />
+            {syncing ? "Syncing..." : "Sync"}
+          </Button>
+          <Button variant="outline" asChild>
             <Link href={`/sites/${id}/edit`}>
-              <Button variant="outline">
-                <Settings className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
+              <Settings className="mr-2 h-4 w-4" />
+              Edit
             </Link>
-          </div>
+          </Button>
         </div>
       </div>
 
-      {/* Status Cards */}
+      {/* Stats Grid */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
-              Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              {site.status === "online" ? (
-                <CheckCircle className="h-5 w-5 text-green-500" />
-              ) : (
-                <XCircle className="h-5 w-5 text-red-500" />
-              )}
-              <span className="font-semibold capitalize">{site.status}</span>
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Status</p>
+                <div className="mt-2 flex items-center gap-2">
+                  {site.status === "online" ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-red-500" />
+                  )}
+                  <span className="text-2xl font-semibold capitalize">
+                    {site.status}
+                  </span>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
-              WordPress
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <span className="font-semibold">
-              {site.wpVersion || "Unknown"}
-            </span>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="WordPress"
+          value={site.wpVersion || "Unknown"}
+          icon={Globe}
+          iconColor="text-blue-500"
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
-              Plugin Updates
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-slate-400" />
-              <span className="font-semibold">{pluginsWithUpdates.length}</span>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Plugin Updates"
+          value={pluginsWithUpdates.length}
+          icon={Package}
+          iconColor={pluginsWithUpdates.length > 0 ? "text-amber-500" : "text-slate-400"}
+        />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">
-              Theme Updates
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Palette className="h-5 w-5 text-slate-400" />
-              <span className="font-semibold">{themesWithUpdates.length}</span>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Theme Updates"
+          value={themesWithUpdates.length}
+          icon={Palette}
+          iconColor={themesWithUpdates.length > 0 ? "text-amber-500" : "text-slate-400"}
+        />
       </div>
 
       {/* Plugins */}
@@ -239,19 +245,21 @@ export default function SiteDetailPage({
         </CardHeader>
         <CardContent>
           {site.plugins.length === 0 ? (
-            <p className="text-slate-500">
+            <p className="text-muted-foreground">
               No plugins synced yet. Click Sync to fetch plugins.
             </p>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y">
               {site.plugins.map((plugin) => (
                 <div
                   key={plugin.id}
                   className="flex items-center justify-between py-3"
                 >
                   <div>
-                    <p className="font-medium text-slate-900">{plugin.name}</p>
-                    <p className="text-sm text-slate-500">v{plugin.version}</p>
+                    <p className="font-medium">{plugin.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      v{plugin.version}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {plugin.updateAvailable && (
@@ -280,19 +288,21 @@ export default function SiteDetailPage({
         </CardHeader>
         <CardContent>
           {site.themes.length === 0 ? (
-            <p className="text-slate-500">
+            <p className="text-muted-foreground">
               No themes synced yet. Click Sync to fetch themes.
             </p>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y">
               {site.themes.map((theme) => (
                 <div
                   key={theme.id}
                   className="flex items-center justify-between py-3"
                 >
                   <div>
-                    <p className="font-medium text-slate-900">{theme.name}</p>
-                    <p className="text-sm text-slate-500">v{theme.version}</p>
+                    <p className="font-medium">{theme.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      v{theme.version}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {theme.updateAvailable && (

@@ -106,9 +106,8 @@ export function UpdateTable({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Checkbox
-            checked={allSelected}
-            indeterminate={someSelected}
-            onChange={toggleAll}
+            checked={someSelected ? "indeterminate" : allSelected}
+            onCheckedChange={toggleAll}
             aria-label="Select all"
           />
           <span className="text-sm text-slate-600">
@@ -156,9 +155,8 @@ export function UpdateTable({
               {groupBy !== "none" && (
                 <div className="flex items-center gap-3 bg-slate-50 px-4 py-2">
                   <Checkbox
-                    checked={groupSelected}
-                    indeterminate={groupPartial}
-                    onChange={() => toggleGroup(groupUpdates)}
+                    checked={groupPartial ? "indeterminate" : groupSelected}
+                    onCheckedChange={() => toggleGroup(groupUpdates)}
                     aria-label={`Select all in ${groupName}`}
                   />
                   <span className="font-medium text-slate-700">{groupName}</span>
@@ -175,7 +173,7 @@ export function UpdateTable({
                     <div className="flex items-center gap-3">
                       <Checkbox
                         checked={selectedIds.has(update.id)}
-                        onChange={() => toggleOne(update.id)}
+                        onCheckedChange={() => toggleOne(update.id)}
                         aria-label={`Select ${update.name}`}
                       />
                       <div className="flex items-center gap-2">

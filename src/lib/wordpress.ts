@@ -1,12 +1,12 @@
 /**
  * WordPress REST API client
- * Uses Application Passwords for authentication (WP 5.6+)
+ * Supports both Application Passwords (WP 5.6+) and WP Manager Connector plugin
  */
 
 interface WPRequestOptions {
   siteUrl: string;
   username: string;
-  password: string;
+  password: string; // Application Password or Connector Secret
 }
 
 interface WPPlugin {
@@ -42,15 +42,72 @@ interface WPSiteHealth {
   is_ssl: boolean;
 }
 
+interface ConnectorHealth {
+  status: string;
+  plugin_version: string;
+  configured: boolean;
+}
+
 class WordPressAPI {
   private siteUrl: string;
   private authHeader: string;
+  private secret: string;
+  private connectorAvailable: boolean | null = null;
 
   constructor({ siteUrl, username, password }: WPRequestOptions) {
     // Remove trailing slash
     this.siteUrl = siteUrl.replace(/\/$/, "");
-    // Create Basic Auth header
+    // Create Basic Auth header for standard WP API
     this.authHeader = `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`;
+    // Store password as connector secret
+    this.secret = password;
+  }
+
+  /**
+   * Check if the WP Manager Connector plugin is installed and configured
+   */
+  private async checkConnector(): Promise<boolean> {
+    if (this.connectorAvailable !== null) {
+      return this.connectorAvailable;
+    }
+
+    try {
+      const response = await fetch(`${this.siteUrl}/wp-json/wp-manager/v1/health`, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (response.ok) {
+        const data: ConnectorHealth = await response.json();
+        this.connectorAvailable = data.status === "ok" && data.configured;
+        return this.connectorAvailable;
+      }
+    } catch {
+      // Connector not available
+    }
+
+    this.connectorAvailable = false;
+    return false;
+  }
+
+  /**
+   * Make request using the connector plugin
+   */
+  private async connectorRequest<T>(endpoint: string): Promise<T> {
+    const url = `${this.siteUrl}/wp-json/wp-manager/v1${endpoint}`;
+
+    const response = await fetch(url, {
+      headers: {
+        "X-WP-Manager-Secret": this.secret,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Connector API error: ${response.status} - ${error}`);
+    }
+
+    return response.json();
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -75,9 +132,31 @@ class WordPressAPI {
 
   /**
    * Check if site is reachable and get basic info
+   * Uses connector plugin if available for richer data
    */
   async checkHealth(): Promise<WPSiteHealth & { online: boolean }> {
     try {
+      // Check if connector is available and get detailed info
+      const hasConnector = await this.checkConnector();
+      if (hasConnector) {
+        try {
+          const info = await this.connectorRequest<{
+            wp_version: string;
+            php_version: string;
+            is_ssl: boolean;
+          }>("/info");
+          return {
+            online: true,
+            version: info.wp_version,
+            php_version: info.php_version,
+            is_ssl: info.is_ssl,
+          };
+        } catch {
+          // Fall through to standard check
+        }
+      }
+
+      // Standard health check
       const response = await fetch(`${this.siteUrl}/wp-json/`, {
         headers: { "Authorization": this.authHeader },
       });
@@ -114,8 +193,21 @@ class WordPressAPI {
 
   /**
    * Get all plugins with their update status
+   * Uses connector plugin if available, falls back to standard WP API
    */
   async getPlugins(): Promise<WPPlugin[]> {
+    // Try connector first
+    const hasConnector = await this.checkConnector();
+    if (hasConnector) {
+      try {
+        return await this.connectorRequest<WPPlugin[]>("/plugins");
+      } catch (connectorError) {
+        console.log("Connector failed, trying standard API:", connectorError);
+        // Fall through to standard API
+      }
+    }
+
+    // Fall back to standard WordPress API
     return this.request<WPPlugin[]>("/wp/v2/plugins");
   }
 
@@ -131,8 +223,21 @@ class WordPressAPI {
 
   /**
    * Get all themes with their update status
+   * Uses connector plugin if available, falls back to standard WP API
    */
   async getThemes(): Promise<WPTheme[]> {
+    // Try connector first
+    const hasConnector = await this.checkConnector();
+    if (hasConnector) {
+      try {
+        return await this.connectorRequest<WPTheme[]>("/themes");
+      } catch (connectorError) {
+        console.log("Connector failed, trying standard API:", connectorError);
+        // Fall through to standard API
+      }
+    }
+
+    // Fall back to standard WordPress API
     return this.request<WPTheme[]>("/wp/v2/themes");
   }
 

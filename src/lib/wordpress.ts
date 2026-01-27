@@ -131,6 +131,24 @@ class WordPressAPI {
   }
 
   /**
+   * Helper to fetch data with connector fallback to standard API
+   */
+  private async fetchWithConnectorFallback<T>(
+    connectorEndpoint: string,
+    wpApiEndpoint: string
+  ): Promise<T> {
+    const hasConnector = await this.checkConnector();
+    if (hasConnector) {
+      try {
+        return await this.connectorRequest<T>(connectorEndpoint);
+      } catch (connectorError) {
+        console.log(`Connector ${connectorEndpoint} failed, falling back to standard API:`, connectorError);
+      }
+    }
+    return this.request<T>(wpApiEndpoint);
+  }
+
+  /**
    * Check if site is reachable and get basic info
    * Uses connector plugin if available for richer data
    */
@@ -151,8 +169,8 @@ class WordPressAPI {
             php_version: info.php_version,
             is_ssl: info.is_ssl,
           };
-        } catch {
-          // Fall through to standard check
+        } catch (connectorError) {
+          console.log("Connector /info failed, falling back to standard health check:", connectorError);
         }
       }
 
@@ -171,7 +189,8 @@ class WordPressAPI {
         version: data.description || "unknown",
         is_ssl: this.siteUrl.startsWith("https"),
       };
-    } catch {
+    } catch (error) {
+      console.log("Health check failed:", error);
       return { online: false, version: "unknown", is_ssl: false };
     }
   }
@@ -196,19 +215,7 @@ class WordPressAPI {
    * Uses connector plugin if available, falls back to standard WP API
    */
   async getPlugins(): Promise<WPPlugin[]> {
-    // Try connector first
-    const hasConnector = await this.checkConnector();
-    if (hasConnector) {
-      try {
-        return await this.connectorRequest<WPPlugin[]>("/plugins");
-      } catch (connectorError) {
-        console.log("Connector failed, trying standard API:", connectorError);
-        // Fall through to standard API
-      }
-    }
-
-    // Fall back to standard WordPress API
-    return this.request<WPPlugin[]>("/wp/v2/plugins");
+    return this.fetchWithConnectorFallback<WPPlugin[]>("/plugins", "/wp/v2/plugins");
   }
 
   /**
@@ -226,19 +233,7 @@ class WordPressAPI {
    * Uses connector plugin if available, falls back to standard WP API
    */
   async getThemes(): Promise<WPTheme[]> {
-    // Try connector first
-    const hasConnector = await this.checkConnector();
-    if (hasConnector) {
-      try {
-        return await this.connectorRequest<WPTheme[]>("/themes");
-      } catch (connectorError) {
-        console.log("Connector failed, trying standard API:", connectorError);
-        // Fall through to standard API
-      }
-    }
-
-    // Fall back to standard WordPress API
-    return this.request<WPTheme[]>("/wp/v2/themes");
+    return this.fetchWithConnectorFallback<WPTheme[]>("/themes", "/wp/v2/themes");
   }
 
   /**

@@ -3,7 +3,7 @@
  * Plugin Name: WP Manager Connector
  * Plugin URI: https://github.com/Aventerica89/jb-cloud-wp-manager
  * Description: Connects your WordPress site to WP Manager dashboard for centralized management.
- * Version: 1.0.1
+ * Version: 1.1.0
  * Author: WP Manager
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html

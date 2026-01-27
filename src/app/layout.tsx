@@ -43,6 +43,12 @@ export default function RootLayout({
                     >
                       Updates
                     </Link>
+                    <Link
+                      href="/activity"
+                      className="text-sm text-slate-600 hover:text-slate-900"
+                    >
+                      Activity
+                    </Link>
                   </div>
                 </div>
               </div>

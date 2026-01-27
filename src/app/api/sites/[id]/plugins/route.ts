@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { sites, plugins } from "@/lib/db/schema";
+import { sites, plugins, themes } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { decrypt } from "@/lib/crypto";
 import { WordPressAPI } from "@/lib/wordpress";
 import { updatePluginSchema } from "@/lib/validations";
+import { logger } from "@/lib/activity-logger";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -77,6 +78,33 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const sitePlugins = await db.query.plugins.findMany({
       where: eq(plugins.siteId, site.id),
     });
+
+    // Also sync themes while we're at it
+    let themeCount = 0;
+    try {
+      const wpThemes = await wp.getThemes();
+      await db.delete(themes).where(eq(themes.siteId, site.id));
+
+      const themeData = wpThemes.map((t) => ({
+        siteId: site.id,
+        name: t.name,
+        slug: t.stylesheet,
+        version: t.version,
+        updateAvailable: !!t.update,
+        newVersion: t.update?.version || null,
+        isActive: t.status === "active",
+      }));
+
+      if (themeData.length > 0) {
+        await db.insert(themes).values(themeData);
+      }
+      themeCount = themeData.length;
+    } catch (themeError) {
+      console.error("Failed to sync themes:", themeError);
+    }
+
+    // Log the sync activity
+    await logger.siteSync(site.id, site.name, sitePlugins.length, themeCount);
 
     return NextResponse.json(sitePlugins);
   } catch (error) {

@@ -56,7 +56,21 @@ export const wpUsers = sqliteTable("wp_users", {
 export const activityLog = sqliteTable("activity_log", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   siteId: integer("site_id").references(() => sites.id, { onDelete: "cascade" }),
-  action: text("action").notNull(),
+  action: text("action", {
+    enum: [
+      "site_added",
+      "site_updated",
+      "site_deleted",
+      "site_sync",
+      "health_check",
+      "plugin_updated",
+      "theme_updated",
+      "bulk_update_started",
+      "bulk_update_completed",
+      "error",
+    ],
+  }).notNull(),
+  status: text("status", { enum: ["success", "failed", "info"] }).default("info"),
   details: text("details"),
   createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
 });

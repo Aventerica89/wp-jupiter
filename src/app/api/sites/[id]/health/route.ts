@@ -4,6 +4,7 @@ import { sites } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { decrypt } from "@/lib/crypto";
 import { WordPressAPI } from "@/lib/wordpress";
+import { logger } from "@/lib/activity-logger";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -38,6 +39,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         lastChecked: new Date().toISOString(),
       })
       .where(eq(sites.id, parseInt(id)));
+
+    // Log the health check
+    await logger.healthCheck(
+      site.id,
+      site.name,
+      health.online ? "online" : "offline"
+    );
 
     return NextResponse.json({
       online: health.online,

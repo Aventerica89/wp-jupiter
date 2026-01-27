@@ -4,6 +4,7 @@ import { sites } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { encrypt } from "@/lib/crypto";
 import { createSiteSchema } from "@/lib/validations";
+import { logger } from "@/lib/activity-logger";
 
 // GET /api/sites - Get all sites
 export async function GET() {
@@ -89,6 +90,9 @@ export async function POST(request: NextRequest) {
         status: sites.status,
         createdAt: sites.createdAt,
       });
+
+    // Log the activity
+    await logger.siteAdded(newSite.id, newSite.name);
 
     return NextResponse.json(newSite, { status: 201 });
   } catch (error) {

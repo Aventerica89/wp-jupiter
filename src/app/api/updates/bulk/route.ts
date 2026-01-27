@@ -5,6 +5,7 @@ import { eq, and, inArray } from "drizzle-orm";
 import { decrypt } from "@/lib/crypto";
 import { WordPressAPI } from "@/lib/wordpress";
 import { bulkUpdateSchema } from "@/lib/validations";
+import { logger } from "@/lib/activity-logger";
 
 interface UpdateResult {
   siteId: number;
@@ -36,6 +37,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Log bulk update start
+    await logger.bulkUpdateStarted(updates.length);
 
     // Group updates by site for efficient processing
     const updatesBySite = new Map<number, typeof updates>();
@@ -198,6 +202,9 @@ export async function POST(request: NextRequest) {
       successful: results.filter((r) => r.status === "success").length,
       failed: results.filter((r) => r.status === "failed").length,
     };
+
+    // Log bulk update completion
+    await logger.bulkUpdateCompleted(summary.successful, summary.failed);
 
     return NextResponse.json({
       results,

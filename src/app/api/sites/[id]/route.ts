@@ -4,6 +4,7 @@ import { sites } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { encrypt } from "@/lib/crypto";
 import { updateSiteSchema } from "@/lib/validations";
+import { logger } from "@/lib/activity-logger";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -77,6 +78,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Site not found" }, { status: 404 });
     }
 
+    // Log the activity
+    await logger.siteUpdated(updated.id, updated.name);
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Failed to update site:", error);
@@ -91,6 +95,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
+
+    // Get site name before deleting (for logging)
+    const site = await db.query.sites.findFirst({
+      where: eq(sites.id, parseInt(id)),
+    });
+
     const [deleted] = await db
       .delete(sites)
       .where(eq(sites.id, parseInt(id)))
@@ -99,6 +109,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     if (!deleted) {
       return NextResponse.json({ error: "Site not found" }, { status: 404 });
     }
+
+    // Log the activity (siteId is null since site is deleted)
+    await logger.siteDeleted(site?.name || "Unknown");
 
     return NextResponse.json({ success: true });
   } catch (error) {

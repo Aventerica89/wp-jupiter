@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DevButton } from "@/components/dev-button";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -36,12 +37,19 @@ export default function RootLayout({
                     >
                       Sites
                     </Link>
+                    <Link
+                      href="/updates"
+                      className="text-sm text-slate-600 hover:text-slate-900"
+                    >
+                      Updates
+                    </Link>
                   </div>
                 </div>
               </div>
             </div>
           </nav>
           <main>{children}</main>
+          <DevButton />
         </div>
       </body>
     </html>

@@ -13,6 +13,7 @@ import {
   XCircle,
   Package,
   Palette,
+  Settings,
 } from "lucide-react";
 
 interface Plugin {
@@ -156,6 +157,12 @@ export default function SiteDetailPage({
               />
               {syncing ? "Syncing..." : "Sync"}
             </Button>
+            <Link href={`/sites/${id}/edit`}>
+              <Button variant="outline">
+                <Settings className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

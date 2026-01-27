@@ -61,12 +61,29 @@ export const activityLog = sqliteTable("activity_log", {
   createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
 });
 
+// Update log for tracking bulk update operations
+export const updateLog = sqliteTable("update_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  siteId: integer("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  itemType: text("item_type", { enum: ["plugin", "theme"] }).notNull(),
+  itemSlug: text("item_slug").notNull(),
+  itemName: text("item_name").notNull(),
+  fromVersion: text("from_version"),
+  toVersion: text("to_version"),
+  status: text("status", { enum: ["pending", "in_progress", "success", "failed"] }).default("pending"),
+  errorMessage: text("error_message"),
+  startedAt: text("started_at"),
+  completedAt: text("completed_at"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+});
+
 // Relations
 export const sitesRelations = relations(sites, ({ many }) => ({
   plugins: many(plugins),
   themes: many(themes),
   users: many(wpUsers),
   activities: many(activityLog),
+  updateLogs: many(updateLog),
 }));
 
 export const pluginsRelations = relations(plugins, ({ one }) => ({
@@ -97,6 +114,13 @@ export const activityLogRelations = relations(activityLog, ({ one }) => ({
   }),
 }));
 
+export const updateLogRelations = relations(updateLog, ({ one }) => ({
+  site: one(sites, {
+    fields: [updateLog.siteId],
+    references: [sites.id],
+  }),
+}));
+
 // Type exports
 export type Site = typeof sites.$inferSelect;
 export type NewSite = typeof sites.$inferInsert;
@@ -104,3 +128,5 @@ export type Plugin = typeof plugins.$inferSelect;
 export type Theme = typeof themes.$inferSelect;
 export type WpUser = typeof wpUsers.$inferSelect;
 export type ActivityLogEntry = typeof activityLog.$inferSelect;
+export type UpdateLogEntry = typeof updateLog.$inferSelect;
+export type NewUpdateLogEntry = typeof updateLog.$inferInsert;

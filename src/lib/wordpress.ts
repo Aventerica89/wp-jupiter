@@ -92,13 +92,18 @@ class WordPressAPI {
   /**
    * Make request using the connector plugin
    */
-  private async connectorRequest<T>(endpoint: string): Promise<T> {
+  private async connectorRequest<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
     const url = `${this.siteUrl}/wp-json/wp-manager/v1${endpoint}`;
 
     const response = await fetch(url, {
+      ...options,
       headers: {
         "X-WP-Manager-Secret": this.secret,
         "Content-Type": "application/json",
+        ...options.headers,
       },
     });
 
@@ -219,13 +224,79 @@ class WordPressAPI {
   }
 
   /**
-   * Update a specific plugin
+   * Activate/deactivate a specific plugin
    */
   async updatePlugin(pluginSlug: string): Promise<WPPlugin> {
     return this.request<WPPlugin>(`/wp/v2/plugins/${pluginSlug}`, {
       method: "POST",
       body: JSON.stringify({ status: "active" }),
     });
+  }
+
+  /**
+   * Update a plugin to its latest version
+   * Uses connector plugin if available, falls back to standard WP API
+   */
+  async updatePluginVersion(pluginSlug: string): Promise<WPPlugin> {
+    const hasConnector = await this.checkConnector();
+
+    if (hasConnector) {
+      try {
+        return await this.connectorRequest<WPPlugin>(
+          `/plugins/update`,
+          {
+            method: "POST",
+            body: JSON.stringify({ plugin: pluginSlug }),
+          }
+        );
+      } catch (connectorError) {
+        console.log(
+          "Connector plugin update failed, falling back to standard API:",
+          connectorError
+        );
+      }
+    }
+
+    // Standard WP REST API - requires WordPress 5.5+ with auto-updates enabled
+    // Note: This may not work on all hosts
+    return this.request<WPPlugin>(
+      `/wp/v2/plugins/${encodeURIComponent(pluginSlug)}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ update: true }),
+      }
+    );
+  }
+
+  /**
+   * Update a theme to its latest version
+   * Uses connector plugin if available, falls back to standard WP API
+   */
+  async updateThemeVersion(stylesheet: string): Promise<WPTheme> {
+    const hasConnector = await this.checkConnector();
+
+    if (hasConnector) {
+      try {
+        return await this.connectorRequest<WPTheme>(
+          `/themes/${encodeURIComponent(stylesheet)}/update`,
+          { method: "POST" }
+        );
+      } catch (connectorError) {
+        console.log(
+          "Connector theme update failed, falling back to standard API:",
+          connectorError
+        );
+      }
+    }
+
+    // Standard WP REST API
+    return this.request<WPTheme>(
+      `/wp/v2/themes/${encodeURIComponent(stylesheet)}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ update: true }),
+      }
+    );
   }
 
   /**

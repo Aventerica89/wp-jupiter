@@ -22,6 +22,18 @@ export const updatePluginSchema = z.object({
   pluginSlug: z.string().min(1, "Plugin slug is required"),
 });
 
+export const bulkUpdateItemSchema = z.object({
+  siteId: z.number().int().positive(),
+  type: z.enum(["plugin", "theme"]),
+  slug: z.string().min(1),
+});
+
+export const bulkUpdateSchema = z.object({
+  updates: z.array(bulkUpdateItemSchema).min(1).max(100),
+});
+
 export type CreateSiteInput = z.infer<typeof createSiteSchema>;
 export type UpdateSiteInput = z.infer<typeof updateSiteSchema>;
 export type UpdatePluginInput = z.infer<typeof updatePluginSchema>;
+export type BulkUpdateItem = z.infer<typeof bulkUpdateItemSchema>;
+export type BulkUpdateInput = z.infer<typeof bulkUpdateSchema>;

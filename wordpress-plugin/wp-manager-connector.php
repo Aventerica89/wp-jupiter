@@ -54,6 +54,27 @@ class WP_Manager_Connector {
             'callback' => array($this, 'health_check'),
             'permission_callback' => '__return_true',
         ));
+
+        // Update a plugin (slug passed in body to avoid URL encoding issues)
+        register_rest_route($this->namespace, '/plugins/update', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'update_plugin'),
+            'permission_callback' => array($this, 'verify_request'),
+        ));
+
+        // Update a theme
+        register_rest_route($this->namespace, '/themes/(?P<stylesheet>.+)/update', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'update_theme'),
+            'permission_callback' => array($this, 'verify_request'),
+            'args' => array(
+                'stylesheet' => array(
+                    'required' => true,
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ),
+            ),
+        ));
     }
 
     /**
@@ -180,8 +201,146 @@ class WP_Manager_Connector {
     public function health_check($request) {
         return rest_ensure_response(array(
             'status' => 'ok',
-            'plugin_version' => '1.0.1',
+            'plugin_version' => '1.1.0',
             'configured' => !empty(get_option('wp_manager_secret')),
+        ));
+    }
+
+    /**
+     * Update a specific plugin to its latest version
+     */
+    public function update_plugin($request) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/update.php';
+
+        $body = $request->get_json_params();
+        $plugin = isset($body['plugin']) ? sanitize_text_field($body['plugin']) : '';
+
+        if (empty($plugin)) {
+            return new WP_Error(
+                'missing_plugin',
+                'Plugin slug is required in request body',
+                array('status' => 400)
+            );
+        }
+
+        // Verify plugin exists
+        $all_plugins = get_plugins();
+        if (!isset($all_plugins[$plugin])) {
+            return new WP_Error(
+                'plugin_not_found',
+                'Plugin not found: ' . $plugin,
+                array('status' => 404)
+            );
+        }
+
+        // Check if update is available
+        wp_update_plugins();
+        $updates = get_plugin_updates();
+
+        if (!isset($updates[$plugin])) {
+            return new WP_Error(
+                'no_update',
+                'No update available for this plugin',
+                array('status' => 400)
+            );
+        }
+
+        // Perform the update using silent upgrader skin
+        $skin = new WP_Ajax_Upgrader_Skin();
+        $upgrader = new Plugin_Upgrader($skin);
+        $result = $upgrader->upgrade($plugin);
+
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
+        if ($result === false) {
+            $errors = $skin->get_errors();
+            $error_message = 'Plugin update failed';
+            if (is_wp_error($errors) && $errors->has_errors()) {
+                $error_message = $errors->get_error_message();
+            }
+            return new WP_Error('update_failed', $error_message, array('status' => 500));
+        }
+
+        // Clear caches and get updated plugin info
+        wp_clean_plugins_cache(true);
+        $updated_plugins = get_plugins();
+        $active_plugins = get_option('active_plugins', array());
+
+        return rest_ensure_response(array(
+            'plugin' => $plugin,
+            'name' => $updated_plugins[$plugin]['Name'],
+            'version' => $updated_plugins[$plugin]['Version'],
+            'status' => in_array($plugin, $active_plugins) ? 'active' : 'inactive',
+            'update' => null,
+        ));
+    }
+
+    /**
+     * Update a specific theme to its latest version
+     */
+    public function update_theme($request) {
+        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+        require_once ABSPATH . 'wp-admin/includes/theme.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+
+        $stylesheet = urldecode($request->get_param('stylesheet'));
+
+        // Verify theme exists
+        $theme = wp_get_theme($stylesheet);
+        if (!$theme->exists()) {
+            return new WP_Error(
+                'theme_not_found',
+                'Theme not found: ' . $stylesheet,
+                array('status' => 404)
+            );
+        }
+
+        // Check if update is available
+        wp_update_themes();
+        $updates = get_site_transient('update_themes');
+
+        if (!isset($updates->response[$stylesheet])) {
+            return new WP_Error(
+                'no_update',
+                'No update available for this theme',
+                array('status' => 400)
+            );
+        }
+
+        // Perform the update
+        $skin = new WP_Ajax_Upgrader_Skin();
+        $upgrader = new Theme_Upgrader($skin);
+        $result = $upgrader->upgrade($stylesheet);
+
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
+        if ($result === false) {
+            $errors = $skin->get_errors();
+            $error_message = 'Theme update failed';
+            if (is_wp_error($errors) && $errors->has_errors()) {
+                $error_message = $errors->get_error_message();
+            }
+            return new WP_Error('update_failed', $error_message, array('status' => 500));
+        }
+
+        // Clear caches and get updated theme info
+        wp_clean_themes_cache(true);
+        $updated_theme = wp_get_theme($stylesheet);
+        $active_theme = wp_get_theme();
+
+        return rest_ensure_response(array(
+            'stylesheet' => $stylesheet,
+            'name' => $updated_theme->get('Name'),
+            'version' => $updated_theme->get('Version'),
+            'status' => ($active_theme->get_stylesheet() === $stylesheet) ? 'active' : 'inactive',
+            'update' => null,
         ));
     }
 

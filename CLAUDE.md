@@ -89,10 +89,27 @@ npm run dev
 
 ## Adding a WordPress Site
 
+### Option 1: Application Passwords (Standard)
+
 1. Go to your WordPress site
 2. Navigate to: Users → Profile → Application Passwords
 3. Create a new application password
 4. Add the site in WP Manager with the URL and credentials
+
+### Option 2: WP Manager Connector Plugin (Recommended)
+
+Some hosts (like xCloud.host) or security plugins block the standard WordPress REST API. Use the connector plugin instead:
+
+1. Download `wordpress-plugin/wp-manager-connector.php` from this repo
+2. Upload it to your WordPress site via Plugins → Add New → Upload Plugin
+3. Activate the plugin
+4. Go to Settings → WP Manager and set a secret key
+5. In WP Manager, add your site using:
+   - **URL**: Your WordPress site URL
+   - **Username**: (anything - it's ignored)
+   - **Password**: The secret key you set in step 4
+
+WP Manager will automatically detect the connector plugin and use it for syncing.
 
 ## API Endpoints
 

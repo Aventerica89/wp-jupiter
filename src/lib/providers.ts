@@ -141,7 +141,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'linode',
     name: 'Linode (Akamai)',
-    logoUrl: 'https://cdn.simpleicons.org/linode/00A95C',
+    logoUrl: 'https://cdn.simpleicons.org/akamai/0096D6',
     dashboardUrl: 'https://cloud.linode.com',
     serverUrlPattern: '/linodes/{serverId}',
     docsUrl: 'https://www.linode.com/docs/',

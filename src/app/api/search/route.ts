@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sites, servers, plugins, themes, projects } from "@/lib/db/schema";
 import { like, or, eq } from "drizzle-orm";
+import { validateSearchQuery, sanitizeError, apiError } from "@/lib/api-utils";
 
 interface SearchResult {
   type: "site" | "server" | "plugin" | "theme" | "project";
@@ -18,14 +19,16 @@ export async function GET(request: NextRequest) {
   try {
     const query = request.nextUrl.searchParams.get("q");
 
-    if (!query || query.length < 2) {
+    // Validate and sanitize query
+    const validation = validateSearchQuery(query);
+    if (!validation.valid) {
       return NextResponse.json({ results: [] });
     }
 
-    const searchPattern = `%${query}%`;
+    const searchPattern = `%${validation.sanitized}%`;
     const results: SearchResult[] = [];
 
-    // Search sites
+    // Search sites (excluding archived by default)
     const matchingSites = await db
       .select({
         id: sites.id,
@@ -164,10 +167,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ results });
   } catch (error) {
-    console.error("Search failed:", error);
-    return NextResponse.json(
-      { error: "Search failed" },
-      { status: 500 }
-    );
+    console.error("Search failed:", sanitizeError(error));
+    return apiError("Search failed");
   }
 }

@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { sanitizeError, apiError } from "@/lib/api-utils";
 
-// GET /api/sites/export - Export sites as CSV
+const ALLOWED_FORMATS = ["csv", "json"] as const;
+
+/**
+ * Mask IP address for security (show only first octet)
+ */
+function maskIpAddress(ip: string | null | undefined): string {
+  if (!ip) return "";
+  const parts = ip.split(".");
+  if (parts.length !== 4) return ip; // Not a valid IPv4, return as-is
+  return `${parts[0]}.xxx.xxx.xxx`;
+}
+
+// GET /api/sites/export - Export sites as CSV or JSON
 export async function GET(request: NextRequest) {
   try {
-    const format = request.nextUrl.searchParams.get("format") || "csv";
+    const formatParam = request.nextUrl.searchParams.get("format");
+    const format = ALLOWED_FORMATS.includes(formatParam as typeof ALLOWED_FORMATS[number])
+      ? formatParam
+      : "csv";
     const includeArchived = request.nextUrl.searchParams.get("includeArchived") === "true";
+    const includeIps = request.nextUrl.searchParams.get("includeIps") === "true";
 
     const allSites = await db.query.sites.findMany({
       with: {
@@ -41,7 +58,9 @@ export async function GET(request: NextRequest) {
         isArchived: site.isArchived,
         createdAt: site.createdAt,
         server: site.server?.name || null,
-        serverIp: site.server?.ipAddress || null,
+        serverIp: includeIps
+          ? site.server?.ipAddress || null
+          : maskIpAddress(site.server?.ipAddress),
         provider: site.server?.provider?.name || null,
         project: site.project?.name || null,
         pluginCount: site.plugins.length,
@@ -91,7 +110,9 @@ export async function GET(request: NextRequest) {
       site.sslExpiry || "",
       site.lastChecked || "",
       site.server?.name || "",
-      site.server?.ipAddress || "",
+      includeIps
+        ? site.server?.ipAddress || ""
+        : maskIpAddress(site.server?.ipAddress),
       site.server?.provider?.name || "",
       site.project?.name || "",
       site.plugins.length,
@@ -115,7 +136,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Export failed:", error);
-    return NextResponse.json({ error: "Export failed" }, { status: 500 });
+    console.error("Export failed:", sanitizeError(error));
+    return apiError("Export failed");
   }
 }

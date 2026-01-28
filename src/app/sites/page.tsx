@@ -253,35 +253,35 @@ export default function SitesPage() {
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  aria-label={site.isFavorite ? `Remove ${site.name} from favorites` : `Add ${site.name} to favorites`}
                   onClick={(e) => toggleFavorite(site.id, e)}
-                  title={site.isFavorite ? "Remove from favorites" : "Add to favorites"}
                 >
                   <Star className={`h-4 w-4 ${site.isFavorite ? "fill-amber-400 text-amber-400" : ""}`} />
                 </Button>
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  aria-label={`Open ${site.name} in new tab`}
                   onClick={(e) => {
                     e.preventDefault();
                     window.open(site.url, "_blank");
                   }}
-                  title="Open site"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </Button>
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  aria-label={`Archive ${site.name}`}
                   onClick={(e) => archiveSite(site.id, site.name, e)}
-                  title="Archive site"
                 >
                   <Archive className="h-4 w-4" />
                 </Button>
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  aria-label={`Delete ${site.name}`}
                   onClick={(e) => deleteSite(site.id, site.name, e)}
-                  title="Delete site"
                 >
                   <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>

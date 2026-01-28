@@ -149,22 +149,22 @@ export default function ArchivedSitesPage() {
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  aria-label={`Open ${site.name} in new tab`}
                   onClick={(e) => {
                     e.preventDefault();
                     window.open(site.url, "_blank");
                   }}
-                  title="Open site"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </Button>
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  aria-label={`Restore ${site.name} from archive`}
                   onClick={(e) => {
                     e.preventDefault();
                     unarchiveSite(site.id, site.name);
                   }}
-                  title="Restore site"
                 >
                   <Archive className="h-4 w-4 text-amber-500" />
                 </Button>

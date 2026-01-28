@@ -204,22 +204,22 @@ export default function ProjectsPage() {
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  aria-label={`Edit ${project.name}`}
                   onClick={(e) => {
                     e.preventDefault();
                     openEditDialog(project);
                   }}
-                  title="Edit project"
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  aria-label={`Delete ${project.name}`}
                   onClick={(e) => {
                     e.preventDefault();
                     deleteProject(project.id, project.name);
                   }}
-                  title="Delete project"
                 >
                   <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>
@@ -239,27 +239,33 @@ export default function ProjectsPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Name</label>
+              <label htmlFor="project-name" className="text-sm font-medium">Name</label>
               <Input
+                id="project-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Client Name or Project"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Description</label>
+              <label htmlFor="project-description" className="text-sm font-medium">Description</label>
               <Input
+                id="project-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional description"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Color</label>
-              <div className="flex gap-2 flex-wrap">
+              <label id="color-label" className="text-sm font-medium">Color</label>
+              <div className="flex gap-2 flex-wrap" role="radiogroup" aria-labelledby="color-label">
                 {PROJECT_COLORS.map((c) => (
                   <button
                     key={c}
+                    type="button"
+                    role="radio"
+                    aria-checked={color === c}
+                    aria-label={`Select color ${c}`}
                     onClick={() => setColor(c)}
                     className={`h-8 w-8 rounded-full transition-transform ${
                       color === c ? "ring-2 ring-offset-2 ring-slate-400 scale-110" : ""

@@ -184,8 +184,9 @@ export default function EditSitePage({
               )}
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Site Name</label>
+                <label htmlFor="site-name" className="text-sm font-medium">Site Name</label>
                 <Input
+                  id="site-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="My WordPress Site"
@@ -194,8 +195,9 @@ export default function EditSitePage({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Site URL</label>
+                <label htmlFor="site-url" className="text-sm font-medium">Site URL</label>
                 <Input
+                  id="site-url"
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
@@ -206,8 +208,9 @@ export default function EditSitePage({
 
               {/* Server Selection */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Server</label>
+                <label htmlFor="server-select" className="text-sm font-medium">Server</label>
                 <select
+                  id="server-select"
                   value={serverId || ""}
                   onChange={(e) => setServerId(e.target.value ? Number(e.target.value) : null)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -227,8 +230,9 @@ export default function EditSitePage({
 
               {/* Project Selection */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Project</label>
+                <label htmlFor="project-select" className="text-sm font-medium">Project</label>
                 <select
+                  id="project-select"
                   value={projectId || ""}
                   onChange={(e) => setProjectId(e.target.value ? Number(e.target.value) : null)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -246,8 +250,9 @@ export default function EditSitePage({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">API Username</label>
+                <label htmlFor="api-username" className="text-sm font-medium">API Username</label>
                 <Input
+                  id="api-username"
                   value={apiUsername}
                   onChange={(e) => setApiUsername(e.target.value)}
                   placeholder="admin"
@@ -259,10 +264,11 @@ export default function EditSitePage({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">
+                <label htmlFor="api-password" className="text-sm font-medium">
                   API Password / Secret Key
                 </label>
                 <Input
+                  id="api-password"
                   type="password"
                   value={apiPassword}
                   onChange={(e) => setApiPassword(e.target.value)}
@@ -276,8 +282,9 @@ export default function EditSitePage({
 
               {/* Notes */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Notes</label>
+                <label htmlFor="site-notes" className="text-sm font-medium">Notes</label>
                 <textarea
+                  id="site-notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Any notes about this site..."

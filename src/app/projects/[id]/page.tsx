@@ -219,6 +219,7 @@ export default function ProjectDetailPage({
                     <Button
                       size="icon-sm"
                       variant="ghost"
+                      aria-label={`Open ${site.name} in new tab`}
                       onClick={(e) => {
                         e.preventDefault();
                         window.open(site.url, "_blank");

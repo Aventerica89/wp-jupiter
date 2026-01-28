@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { projects, sites } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { parseId, invalidIdResponse, sanitizeError, apiError } from "@/lib/api-utils";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -16,9 +17,14 @@ const updateProjectSchema = z.object({
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
+    const projectId = parseId(id);
+
+    if (!projectId) {
+      return invalidIdResponse();
+    }
 
     const project = await db.query.projects.findFirst({
-      where: eq(projects.id, parseInt(id)),
+      where: eq(projects.id, projectId),
       with: {
         sites: {
           with: {
@@ -60,11 +66,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       sites: safeSites,
     });
   } catch (error) {
-    console.error("Failed to fetch project:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch project" },
-      { status: 500 }
-    );
+    console.error("Failed to fetch project:", sanitizeError(error));
+    return apiError("Failed to fetch project");
   }
 }
 
@@ -72,14 +75,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
+    const projectId = parseId(id);
+
+    if (!projectId) {
+      return invalidIdResponse();
+    }
+
     const body = await request.json();
 
     const result = updateProjectSchema.safeParse(body);
     if (!result.success) {
-      return NextResponse.json(
-        { error: "Validation failed", details: result.error.flatten() },
-        { status: 400 }
-      );
+      return apiError("Validation failed", 400, result.error.flatten());
     }
 
     const [updated] = await db
@@ -88,7 +94,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         ...result.data,
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(projects.id, parseInt(id)))
+      .where(eq(projects.id, projectId))
       .returning();
 
     if (!updated) {
@@ -97,11 +103,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("Failed to update project:", error);
-    return NextResponse.json(
-      { error: "Failed to update project" },
-      { status: 500 }
-    );
+    console.error("Failed to update project:", sanitizeError(error));
+    return apiError("Failed to update project");
   }
 }
 
@@ -109,16 +112,21 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
+    const projectId = parseId(id);
+
+    if (!projectId) {
+      return invalidIdResponse();
+    }
 
     // Unassign sites from this project first
     await db
       .update(sites)
       .set({ projectId: null })
-      .where(eq(sites.projectId, parseInt(id)));
+      .where(eq(sites.projectId, projectId));
 
     const [deleted] = await db
       .delete(projects)
-      .where(eq(projects.id, parseInt(id)))
+      .where(eq(projects.id, projectId))
       .returning({ id: projects.id });
 
     if (!deleted) {
@@ -127,10 +135,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete project:", error);
-    return NextResponse.json(
-      { error: "Failed to delete project" },
-      { status: 500 }
-    );
+    console.error("Failed to delete project:", sanitizeError(error));
+    return apiError("Failed to delete project");
   }
 }

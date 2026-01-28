@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { sites } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { parseId, invalidIdResponse, sanitizeError, apiError } from "@/lib/api-utils";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -9,10 +10,15 @@ type RouteParams = { params: Promise<{ id: string }> };
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
+    const siteId = parseId(id);
+
+    if (!siteId) {
+      return invalidIdResponse();
+    }
 
     // Get current status
     const site = await db.query.sites.findFirst({
-      where: eq(sites.id, parseInt(id)),
+      where: eq(sites.id, siteId),
     });
 
     if (!site) {
@@ -26,7 +32,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         isArchived: !site.isArchived,
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(sites.id, parseInt(id)))
+      .where(eq(sites.id, siteId))
       .returning({
         id: sites.id,
         isArchived: sites.isArchived,
@@ -34,10 +40,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("Failed to toggle archive:", error);
-    return NextResponse.json(
-      { error: "Failed to toggle archive" },
-      { status: 500 }
-    );
+    console.error("Failed to toggle archive:", sanitizeError(error));
+    return apiError("Failed to toggle archive");
   }
 }

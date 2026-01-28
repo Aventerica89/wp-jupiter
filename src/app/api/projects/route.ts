@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { projects, sites } from "@/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { z } from "zod";
+import { sanitizeError, apiError } from "@/lib/api-utils";
 
 const createProjectSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -30,11 +31,8 @@ export async function GET() {
 
     return NextResponse.json(allProjects);
   } catch (error) {
-    console.error("Failed to fetch projects:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch projects" },
-      { status: 500 }
-    );
+    console.error("Failed to fetch projects:", sanitizeError(error));
+    return apiError("Failed to fetch projects");
   }
 }
 
@@ -45,10 +43,7 @@ export async function POST(request: NextRequest) {
 
     const result = createProjectSchema.safeParse(body);
     if (!result.success) {
-      return NextResponse.json(
-        { error: "Validation failed", details: result.error.flatten() },
-        { status: 400 }
-      );
+      return apiError("Validation failed", 400, result.error.flatten());
     }
 
     const [newProject] = await db
@@ -62,10 +57,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(newProject, { status: 201 });
   } catch (error) {
-    console.error("Failed to create project:", error);
-    return NextResponse.json(
-      { error: "Failed to create project" },
-      { status: 500 }
-    );
+    console.error("Failed to create project:", sanitizeError(error));
+    return apiError("Failed to create project");
   }
 }

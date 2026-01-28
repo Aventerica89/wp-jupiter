@@ -10,6 +10,11 @@ export interface Site {
   status: 'online' | 'offline' | 'unknown';
   pluginUpdates: number;
   themeUpdates: number;
+  isFavorite?: boolean;
+  isArchived?: boolean;
+  projectId?: number | null;
+  projectName?: string | null;
+  projectColor?: string | null;
 }
 
 export interface UpdateCounts {

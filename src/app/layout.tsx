@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sidebar } from "@/components/sidebar";
 import { DevButton } from "@/components/dev-button";
+import { CommandPalette } from "@/components/command-palette";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -24,6 +25,7 @@ export default function RootLayout({
           </main>
         </div>
         <DevButton />
+        <CommandPalette />
         <Toaster position="top-right" />
       </body>
     </html>

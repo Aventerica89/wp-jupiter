@@ -34,6 +34,8 @@ interface SiteWithHealth extends Site {
   lastChecked: string | null;
   sslValid?: boolean;
   sslExpiry?: string | null;
+  providerName?: string | null;
+  providerLogo?: string | null;
 }
 
 function StatCard({
@@ -122,6 +124,26 @@ export default function DashboardPage() {
     { name: "Themes", value: counts.themeUpdates, color: CHART_COLORS.themes },
   ];
 
+  // Provider breakdown
+  const providerCounts = sites.reduce((acc, site) => {
+    const provider = site.providerName || "No Provider";
+    acc[provider] = (acc[provider] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const PROVIDER_COLORS = [
+    "#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#8b5cf6",
+    "#ec4899", "#06b6d4", "#84cc16", "#f97316", "#6366f1",
+  ];
+
+  const providerChartData = Object.entries(providerCounts)
+    .map(([name, value], index) => ({
+      name,
+      value,
+      color: PROVIDER_COLORS[index % PROVIDER_COLORS.length],
+    }))
+    .sort((a, b) => b.value - a.value);
+
   // Calculate health scores for top sites
   const sitesWithHealth = sites.map((site) => {
     const health: SiteHealth = {
@@ -205,7 +227,7 @@ export default function DashboardPage() {
 
       {/* Charts Row */}
       {sites.length > 0 && (
-        <div className="mb-8 grid gap-4 lg:grid-cols-2">
+        <div className="mb-8 grid gap-4 lg:grid-cols-3">
           {/* Status Distribution */}
           <Card>
             <CardHeader>
@@ -278,6 +300,47 @@ export default function DashboardPage() {
                   <span>Theme Updates</span>
                   <span className="font-medium">{counts.themeUpdates}</span>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Provider Breakdown */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Sites by Provider</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={providerChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {providerChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 flex flex-wrap justify-center gap-3 text-sm">
+                {providerChartData.slice(0, 4).map((item) => (
+                  <div key={item.name} className="flex items-center gap-2">
+                    <div
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="truncate max-w-[80px]">{item.name}</span>
+                    <span className="font-medium">{item.value}</span>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

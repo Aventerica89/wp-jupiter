@@ -6,6 +6,7 @@ export const createSiteSchema = z.object({
   apiUsername: z.string().min(1, "Username is required"),
   apiPassword: z.string().min(1, "Password is required"),
   serverId: z.number().int().positive().nullable().optional(),
+  projectId: z.number().int().positive().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
@@ -19,7 +20,10 @@ export const updateSiteSchema = z.object({
   phpVersion: z.string().nullable().optional(),
   sslExpiry: z.string().nullable().optional(),
   serverId: z.number().int().positive().nullable().optional(),
+  projectId: z.number().int().positive().nullable().optional(),
   notes: z.string().nullable().optional(),
+  isFavorite: z.boolean().optional(),
+  isArchived: z.boolean().optional(),
 });
 
 export const updatePluginSchema = z.object({

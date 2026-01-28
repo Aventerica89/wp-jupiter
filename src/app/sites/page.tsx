@@ -14,6 +14,9 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Star,
+  Archive,
+  FileDown,
 } from "lucide-react";
 import { calculateUpdateCounts, type Site } from "@/lib/site-utils";
 
@@ -76,6 +79,39 @@ export default function SitesPage() {
     }
   };
 
+  const toggleFavorite = async (id: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`/api/sites/${id}/favorite`, { method: "POST" });
+      const data = await res.json();
+      setSites(sites.map((s) =>
+        s.id === id ? { ...s, isFavorite: data.isFavorite } : s
+      ).sort((a, b) => {
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
+        return a.name.localeCompare(b.name);
+      }));
+      toast.success(data.isFavorite ? "Added to favorites" : "Removed from favorites");
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+      toast.error("Failed to update favorite");
+    }
+  };
+
+  const archiveSite = async (id: number, name: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await fetch(`/api/sites/${id}/archive`, { method: "POST" });
+      setSites(sites.filter((s) => s.id !== id));
+      toast.success("Site archived", {
+        description: `${name} has been archived.`,
+      });
+    } catch (error) {
+      console.error("Failed to archive site:", error);
+      toast.error("Failed to archive site");
+    }
+  };
+
   useEffect(() => {
     fetchSites();
   }, []);
@@ -101,12 +137,26 @@ export default function SitesPage() {
             Manage your WordPress sites
           </p>
         </div>
-        <Button asChild>
-          <Link href="/sites/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Site
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/sites/archived">
+              <Archive className="mr-2 h-4 w-4" />
+              Archived
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <a href="/api/sites/export?format=csv" download>
+              <FileDown className="mr-2 h-4 w-4" />
+              Export
+            </a>
+          </Button>
+          <Button asChild>
+            <Link href="/sites/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Site
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -155,8 +205,11 @@ export default function SitesPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+                      <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
                         <Globe className="h-5 w-5 text-slate-600" />
+                        {site.isFavorite && (
+                          <Star className="absolute -top-1 -right-1 h-4 w-4 fill-amber-400 text-amber-400" />
+                        )}
                       </div>
                       <div>
                         <CardTitle className="text-base">{site.name}</CardTitle>
@@ -200,17 +253,35 @@ export default function SitesPage() {
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  onClick={(e) => toggleFavorite(site.id, e)}
+                  title={site.isFavorite ? "Remove from favorites" : "Add to favorites"}
+                >
+                  <Star className={`h-4 w-4 ${site.isFavorite ? "fill-amber-400 text-amber-400" : ""}`} />
+                </Button>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
                   onClick={(e) => {
                     e.preventDefault();
                     window.open(site.url, "_blank");
                   }}
+                  title="Open site"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </Button>
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  onClick={(e) => archiveSite(site.id, site.name, e)}
+                  title="Archive site"
+                >
+                  <Archive className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
                   onClick={(e) => deleteSite(site.id, site.name, e)}
+                  title="Delete site"
                 >
                   <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>

@@ -15,6 +15,7 @@ interface Site {
   url: string;
   apiUsername: string;
   serverId: number | null;
+  projectId: number | null;
   notes: string | null;
 }
 
@@ -22,6 +23,12 @@ interface ServerOption {
   id: number;
   name: string;
   providerName: string | null;
+}
+
+interface ProjectOption {
+  id: number;
+  name: string;
+  color: string;
 }
 
 export default function EditSitePage({
@@ -33,6 +40,7 @@ export default function EditSitePage({
   const router = useRouter();
   const [site, setSite] = useState<Site | null>(null);
   const [servers, setServers] = useState<ServerOption[]>([]);
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -43,24 +51,29 @@ export default function EditSitePage({
   const [apiUsername, setApiUsername] = useState("");
   const [apiPassword, setApiPassword] = useState("");
   const [serverId, setServerId] = useState<number | null>(null);
+  const [projectId, setProjectId] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [siteRes, serversRes] = await Promise.all([
+        const [siteRes, serversRes, projectsRes] = await Promise.all([
           fetch(`/api/sites/${id}`),
           fetch("/api/servers"),
+          fetch("/api/projects"),
         ]);
         const siteData = await siteRes.json();
         const serversData = await serversRes.json();
+        const projectsData = await projectsRes.json();
 
         setSite(siteData);
         setServers(serversData);
+        setProjects(projectsData);
         setName(siteData.name);
         setUrl(siteData.url);
         setApiUsername(siteData.apiUsername || "");
         setServerId(siteData.serverId || null);
+        setProjectId(siteData.projectId || null);
         setNotes(siteData.notes || "");
       } catch (err) {
         setError("Failed to load site");
@@ -82,6 +95,7 @@ export default function EditSitePage({
         url,
         apiUsername,
         serverId,
+        projectId,
         notes: notes || null,
       };
       if (apiPassword) {
@@ -208,6 +222,26 @@ export default function EditSitePage({
                 </select>
                 <p className="text-xs text-muted-foreground">
                   Assign this site to a server for organization
+                </p>
+              </div>
+
+              {/* Project Selection */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Project</label>
+                <select
+                  value={projectId || ""}
+                  onChange={(e) => setProjectId(e.target.value ? Number(e.target.value) : null)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="">No project assigned</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Group this site with others in a project
                 </p>
               </div>
 

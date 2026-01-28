@@ -23,6 +23,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             provider: true,
           },
         },
+        project: true,
       },
     });
 
@@ -30,8 +31,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Site not found" }, { status: 404 });
     }
 
-    // Strip sensitive data and add server info
-    const { apiPassword, server, ...safeSite } = site;
+    // Strip sensitive data and add server/project info
+    const { apiPassword, server, project, ...safeSite } = site;
     return NextResponse.json({
       ...safeSite,
       serverName: server?.name || null,
@@ -39,6 +40,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       providerName: server?.provider?.name || null,
       providerSlug: server?.provider?.slug || null,
       providerLogo: server?.provider?.logoUrl || null,
+      projectName: project?.name || null,
+      projectColor: project?.color || null,
     });
   } catch (error) {
     console.error("Failed to fetch site:", error);

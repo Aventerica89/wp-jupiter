@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Globe,
   Server,
+  FolderOpen,
   Download,
   Activity,
   Settings,
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/sites", label: "Sites", icon: Globe },
   { href: "/servers", label: "Servers", icon: Server },
+  { href: "/projects", label: "Projects", icon: FolderOpen },
   { href: "/updates", label: "Updates", icon: Download },
   { href: "/activity", label: "Activity", icon: Activity },
 ];

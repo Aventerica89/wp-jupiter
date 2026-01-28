@@ -7,8 +7,10 @@ import { createSiteSchema } from "@/lib/validations";
 import { logger } from "@/lib/activity-logger";
 
 // GET /api/sites - Get all sites
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const includeArchived = request.nextUrl.searchParams.get("includeArchived") === "true";
+
     const allSites = await db.query.sites.findMany({
       with: {
         plugins: true,
@@ -18,32 +20,52 @@ export async function GET() {
             provider: true,
           },
         },
+        project: true,
       },
     });
 
+    // Filter archived sites unless requested
+    const filteredSites = includeArchived
+      ? allSites
+      : allSites.filter((s) => !s.isArchived);
+
     // Calculate update counts and strip sensitive data
-    const sitesWithCounts = allSites.map((site) => ({
-      id: site.id,
-      name: site.name,
-      url: site.url,
-      wpVersion: site.wpVersion,
-      phpVersion: site.phpVersion,
-      status: site.status,
-      sslExpiry: site.sslExpiry,
-      lastChecked: site.lastChecked,
-      notes: site.notes,
-      createdAt: site.createdAt,
-      updatedAt: site.updatedAt,
-      pluginUpdates: site.plugins.filter((p) => p.updateAvailable).length,
-      themeUpdates: site.themes.filter((t) => t.updateAvailable).length,
-      serverId: site.serverId,
-      serverName: site.server?.name || null,
-      serverIp: site.server?.ipAddress || null,
-      providerId: site.server?.providerId || null,
-      providerName: site.server?.provider?.name || null,
-      providerSlug: site.server?.provider?.slug || null,
-      providerLogo: site.server?.provider?.logoUrl || null,
-    }));
+    // Sort: favorites first, then by name
+    const sitesWithCounts = filteredSites
+      .map((site) => ({
+        id: site.id,
+        name: site.name,
+        url: site.url,
+        wpVersion: site.wpVersion,
+        phpVersion: site.phpVersion,
+        status: site.status,
+        sslExpiry: site.sslExpiry,
+        lastChecked: site.lastChecked,
+        notes: site.notes,
+        isFavorite: site.isFavorite,
+        isArchived: site.isArchived,
+        createdAt: site.createdAt,
+        updatedAt: site.updatedAt,
+        pluginUpdates: site.plugins.filter((p) => p.updateAvailable).length,
+        themeUpdates: site.themes.filter((t) => t.updateAvailable).length,
+        serverId: site.serverId,
+        serverName: site.server?.name || null,
+        serverIp: site.server?.ipAddress || null,
+        providerId: site.server?.providerId || null,
+        providerName: site.server?.provider?.name || null,
+        providerSlug: site.server?.provider?.slug || null,
+        providerLogo: site.server?.provider?.logoUrl || null,
+        projectId: site.projectId,
+        projectName: site.project?.name || null,
+        projectColor: site.project?.color || null,
+      }))
+      .sort((a, b) => {
+        // Favorites first
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
+        // Then by name
+        return a.name.localeCompare(b.name);
+      });
 
     return NextResponse.json(sitesWithCounts);
   } catch (error) {
@@ -96,6 +118,7 @@ export async function POST(request: NextRequest) {
         apiPassword: encryptedPassword,
         status: "unknown",
         serverId: body.serverId || null,
+        projectId: body.projectId || null,
         notes: body.notes || null,
       })
       .returning({

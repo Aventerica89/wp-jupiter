@@ -1,6 +1,16 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
+// Projects/folders for organizing sites
+export const projects = sqliteTable("projects", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  description: text("description"),
+  color: text("color").default("#6366f1"), // Default indigo
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
 // Hosting providers (xCloud, Cloudways, Runcloud, etc.)
 export const providers = sqliteTable("providers", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -32,6 +42,7 @@ export const servers = sqliteTable("servers", {
 export const sites = sqliteTable("sites", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   serverId: integer("server_id").references(() => servers.id, { onDelete: "set null" }),
+  projectId: integer("project_id").references(() => projects.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   url: text("url").notNull().unique(),
   apiUsername: text("api_username").notNull(),
@@ -42,6 +53,8 @@ export const sites = sqliteTable("sites", {
   sslExpiry: text("ssl_expiry"),
   lastChecked: text("last_checked"),
   notes: text("notes"), // Site notes/changelog
+  isFavorite: integer("is_favorite", { mode: "boolean" }).default(false),
+  isArchived: integer("is_archived", { mode: "boolean" }).default(false),
   createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
 });
@@ -124,6 +137,10 @@ export const updateLog = sqliteTable("update_log", {
 });
 
 // Relations
+export const projectsRelations = relations(projects, ({ many }) => ({
+  sites: many(sites),
+}));
+
 export const providersRelations = relations(providers, ({ many }) => ({
   servers: many(servers),
 }));
@@ -140,6 +157,10 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
   server: one(servers, {
     fields: [sites.serverId],
     references: [servers.id],
+  }),
+  project: one(projects, {
+    fields: [sites.projectId],
+    references: [projects.id],
   }),
   plugins: many(plugins),
   themes: many(themes),
@@ -184,6 +205,8 @@ export const updateLogRelations = relations(updateLog, ({ one }) => ({
 }));
 
 // Type exports
+export type Project = typeof projects.$inferSelect;
+export type NewProject = typeof projects.$inferInsert;
 export type Provider = typeof providers.$inferSelect;
 export type NewProvider = typeof providers.$inferInsert;
 export type Server = typeof servers.$inferSelect;

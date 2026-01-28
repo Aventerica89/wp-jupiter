@@ -2,6 +2,12 @@
 
 A self-hosted WordPress site management dashboard, similar to MainWP but lightweight and built with modern tech.
 
+## Documentation
+
+- Sync to docs.jbcloud.app: Yes
+- Project slug: wp-manager
+- Docs URL: https://docs.jbcloud.app/wp-manager/
+
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router)
@@ -123,19 +129,37 @@ WP Manager will automatically detect the connector plugin and use it for syncing
 - `POST /api/sites/[id]/plugins` - Update a plugin
 - `POST /api/sync` - Sync all sites
 
-## MVP Features (Phase 1)
+## MVP Features (Phase 1) - Complete
 
 - [x] Site management (add/edit/delete)
 - [x] Dashboard with status overview
 - [x] Plugin/theme listing with update status
 - [x] Health checks (online/offline status)
 - [x] Bulk sync functionality
+- [x] WP Manager Connector plugin for restricted hosts
 
-## Phase 2 (Planned)
+## Phase 2 (Core Features) - Complete
 
-- [ ] Bulk plugin/theme updates
+- [x] Bulk plugin/theme updates
+- [x] Activity logging
+- [x] Site credential editing
+- [x] Style guide page
+- [x] TDD utilities (validation, health scoring, scheduling)
+- [x] Migration to official shadcn/ui components
+
+## Phase 3 (Polish) - Complete
+
+- [x] Dashboard charts (site status pie, updates bar chart)
+- [x] Health score calculation (0-100 scoring)
+- [x] "Sites Needing Attention" section
+- [x] Toast notifications
+- [x] Mobile responsive sidebar
+- [x] Client-side form validation
+- [x] 63 tests with 100% coverage
+
+## Phase 4 (Planned)
+
 - [ ] User management across sites
-- [ ] Activity logging
 - [ ] Scheduled syncing
 - [ ] Backup coordination
 - [ ] Security scanning

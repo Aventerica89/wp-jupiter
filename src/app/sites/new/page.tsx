@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -12,30 +13,39 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Globe } from "lucide-react";
+import { validateSiteData, type SiteInput } from "@/lib/validation";
 
 export default function NewSitePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setErrors([]);
 
     const formData = new FormData(e.currentTarget);
-    const data = {
-      name: formData.get("name"),
-      url: formData.get("url"),
-      apiUsername: formData.get("apiUsername"),
-      apiPassword: formData.get("apiPassword"),
+    const rawData: SiteInput = {
+      name: formData.get("name") as string,
+      url: formData.get("url") as string,
+      apiUsername: formData.get("apiUsername") as string,
+      apiPassword: formData.get("apiPassword") as string,
     };
+
+    // Client-side validation using TDD utility
+    const validation = validateSiteData(rawData);
+    if (!validation.valid) {
+      setErrors(validation.errors || ["Invalid input"]);
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch("/api/sites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(validation.data),
       });
 
       if (!res.ok) {
@@ -43,9 +53,16 @@ export default function NewSitePage() {
         throw new Error(errorData.error || "Failed to add site");
       }
 
+      toast.success("Site added successfully", {
+        description: `${validation.data?.name} has been connected.`,
+      });
       router.push("/sites");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add site");
+      const message = err instanceof Error ? err.message : "Failed to add site";
+      setErrors([message]);
+      toast.error("Failed to add site", {
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
@@ -78,9 +95,13 @@ export default function NewSitePage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
+              {errors.length > 0 && (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-                  {error}
+                  <ul className="list-disc pl-4 space-y-1">
+                    {errors.map((error, i) => (
+                      <li key={i}>{error}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
@@ -95,7 +116,6 @@ export default function NewSitePage() {
                   id="name"
                   name="name"
                   type="text"
-                  required
                   placeholder="My WordPress Site"
                 />
               </div>
@@ -110,8 +130,7 @@ export default function NewSitePage() {
                 <Input
                   id="url"
                   name="url"
-                  type="url"
-                  required
+                  type="text"
                   placeholder="https://example.com"
                 />
               </div>
@@ -127,7 +146,6 @@ export default function NewSitePage() {
                   id="apiUsername"
                   name="apiUsername"
                   type="text"
-                  required
                   placeholder="admin"
                 />
               </div>
@@ -143,7 +161,6 @@ export default function NewSitePage() {
                   id="apiPassword"
                   name="apiPassword"
                   type="password"
-                  required
                   placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
                 />
                 <p className="mt-1.5 text-xs text-muted-foreground">

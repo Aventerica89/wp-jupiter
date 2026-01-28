@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   Globe,
   RefreshCw,
@@ -12,17 +13,27 @@ import {
   CheckCircle,
   XCircle,
   ArrowRight,
+  TrendingUp,
 } from "lucide-react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { formatRelativeTime, calculateUpdateCounts, type Site } from "@/lib/site-utils";
+import { calculateHealthScore, type SiteHealth } from "@/lib/business-logic";
 
-interface Site {
-  id: number;
-  name: string;
-  url: string;
-  status: "online" | "offline" | "unknown";
+interface SiteWithHealth extends Site {
   wpVersion: string | null;
   lastChecked: string | null;
-  pluginUpdates: number;
-  themeUpdates: number;
+  sslValid?: boolean;
+  sslExpiry?: string | null;
 }
 
 function StatCard({
@@ -51,8 +62,16 @@ function StatCard({
   );
 }
 
+const CHART_COLORS = {
+  online: "#22c55e",
+  offline: "#ef4444",
+  unknown: "#94a3b8",
+  plugins: "#3b82f6",
+  themes: "#a855f7",
+};
+
 export default function DashboardPage() {
-  const [sites, setSites] = useState<Site[]>([]);
+  const [sites, setSites] = useState<SiteWithHealth[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
 
@@ -63,6 +82,7 @@ export default function DashboardPage() {
       setSites(data);
     } catch (error) {
       console.error("Failed to fetch sites:", error);
+      toast.error("Failed to load sites");
     } finally {
       setLoading(false);
     }
@@ -70,11 +90,14 @@ export default function DashboardPage() {
 
   const syncAllSites = async () => {
     setSyncing(true);
+    toast.loading("Syncing all sites...", { id: "sync" });
     try {
       await fetch("/api/sync", { method: "POST" });
       await fetchSites();
+      toast.success("All sites synced", { id: "sync" });
     } catch (error) {
       console.error("Sync failed:", error);
+      toast.error("Sync failed", { id: "sync" });
     } finally {
       setSyncing(false);
     }
@@ -84,12 +107,42 @@ export default function DashboardPage() {
     fetchSites();
   }, []);
 
-  const totalUpdates = sites.reduce(
-    (sum, site) => sum + site.pluginUpdates + site.themeUpdates,
-    0
-  );
-  const onlineSites = sites.filter((s) => s.status === "online").length;
-  const offlineSites = sites.filter((s) => s.status === "offline").length;
+  // Use TDD utility for calculations
+  const counts = calculateUpdateCounts(sites);
+
+  // Prepare chart data
+  const statusChartData = [
+    { name: "Online", value: counts.sitesOnline, color: CHART_COLORS.online },
+    { name: "Offline", value: counts.sitesOffline, color: CHART_COLORS.offline },
+    { name: "Unknown", value: sites.length - counts.sitesOnline - counts.sitesOffline, color: CHART_COLORS.unknown },
+  ].filter((d) => d.value > 0);
+
+  const updateChartData = [
+    { name: "Plugins", value: counts.pluginUpdates, color: CHART_COLORS.plugins },
+    { name: "Themes", value: counts.themeUpdates, color: CHART_COLORS.themes },
+  ];
+
+  // Calculate health scores for top sites
+  const sitesWithHealth = sites.map((site) => {
+    const health: SiteHealth = {
+      status: site.status,
+      sslValid: site.sslValid ?? true,
+      sslExpiry: site.sslExpiry ? new Date(site.sslExpiry) : null,
+      lastChecked: site.lastChecked ? new Date(site.lastChecked) : null,
+      pluginUpdates: site.pluginUpdates,
+      themeUpdates: site.themeUpdates,
+    };
+    return {
+      ...site,
+      healthScore: calculateHealthScore(health),
+    };
+  });
+
+  // Top sites needing attention (lowest health scores)
+  const sitesNeedingAttention = [...sitesWithHealth]
+    .filter((s) => s.healthScore < 80)
+    .sort((a, b) => a.healthScore - b.healthScore)
+    .slice(0, 5);
 
   if (loading) {
     return (
@@ -132,23 +185,150 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Online"
-          value={onlineSites}
+          value={counts.sitesOnline}
           icon={CheckCircle}
           iconColor="text-green-500"
         />
         <StatCard
           title="Offline"
-          value={offlineSites}
+          value={counts.sitesOffline}
           icon={XCircle}
           iconColor="text-red-500"
         />
         <StatCard
           title="Updates Available"
-          value={totalUpdates}
+          value={counts.totalUpdates}
           icon={AlertCircle}
           iconColor="text-amber-500"
         />
       </div>
+
+      {/* Charts Row */}
+      {sites.length > 0 && (
+        <div className="mb-8 grid gap-4 lg:grid-cols-2">
+          {/* Status Distribution */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Site Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={statusChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {statusChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 flex justify-center gap-4 text-sm">
+                {statusChartData.map((item) => (
+                  <div key={item.name} className="flex items-center gap-2">
+                    <div
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span>{item.name}</span>
+                    <span className="font-medium">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Updates by Type */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pending Updates</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={updateChartData} layout="vertical">
+                    <XAxis type="number" />
+                    <YAxis dataKey="name" type="category" width={60} />
+                    <Tooltip />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                      {updateChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 flex justify-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-blue-500" />
+                  <span>Plugin Updates</span>
+                  <span className="font-medium">{counts.pluginUpdates}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-purple-500" />
+                  <span>Theme Updates</span>
+                  <span className="font-medium">{counts.themeUpdates}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Sites Needing Attention */}
+      {sitesNeedingAttention.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-amber-500" />
+              <CardTitle>Sites Needing Attention</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="divide-y">
+              {sitesNeedingAttention.map((site) => (
+                <Link
+                  key={site.id}
+                  href={`/sites/${site.id}`}
+                  className="flex items-center justify-between py-3 hover:bg-slate-50 -mx-6 px-6 transition-colors first:pt-0 last:pb-0"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+                      <Globe className="h-5 w-5 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{site.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Health: {site.healthScore}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge
+                      variant={
+                        site.healthScore < 50
+                          ? "destructive"
+                          : "warning"
+                      }
+                    >
+                      {site.healthScore < 50 ? "Critical" : "Warning"}
+                    </Badge>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent Sites */}
       <Card>
@@ -183,7 +363,9 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="font-medium">{site.name}</p>
-                      <p className="text-sm text-muted-foreground">{site.url}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Checked {formatRelativeTime(site.lastChecked)}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -208,20 +390,6 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Quick Actions */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            {sites.length === 0
-              ? "Add your first WordPress site to get started."
-              : `Manage ${sites.length} site${sites.length !== 1 ? "s" : ""} from your dashboard.`}
-          </p>
         </CardContent>
       </Card>
     </div>

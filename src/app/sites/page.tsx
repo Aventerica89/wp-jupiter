@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   Plus,
   ExternalLink,
@@ -14,16 +15,7 @@ import {
   XCircle,
   AlertCircle,
 } from "lucide-react";
-
-interface Site {
-  id: number;
-  name: string;
-  url: string;
-  status: "online" | "offline" | "unknown";
-  wpVersion: string | null;
-  pluginUpdates: number;
-  themeUpdates: number;
-}
+import { calculateUpdateCounts, type Site } from "@/lib/site-utils";
 
 function StatCard({
   title,
@@ -62,20 +54,25 @@ export default function SitesPage() {
       setSites(data);
     } catch (error) {
       console.error("Failed to fetch sites:", error);
+      toast.error("Failed to load sites");
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteSite = async (id: number, e: React.MouseEvent) => {
+  const deleteSite = async (id: number, name: string, e: React.MouseEvent) => {
     e.preventDefault();
     if (!confirm("Are you sure you want to delete this site?")) return;
 
     try {
       await fetch(`/api/sites/${id}`, { method: "DELETE" });
       setSites(sites.filter((s) => s.id !== id));
+      toast.success("Site deleted", {
+        description: `${name} has been removed.`,
+      });
     } catch (error) {
       console.error("Failed to delete site:", error);
+      toast.error("Failed to delete site");
     }
   };
 
@@ -83,12 +80,8 @@ export default function SitesPage() {
     fetchSites();
   }, []);
 
-  const onlineSites = sites.filter((s) => s.status === "online").length;
-  const offlineSites = sites.filter((s) => s.status === "offline").length;
-  const totalUpdates = sites.reduce(
-    (sum, site) => sum + site.pluginUpdates + site.themeUpdates,
-    0
-  );
+  // Use TDD utility for calculations
+  const counts = calculateUpdateCounts(sites);
 
   if (loading) {
     return (
@@ -126,19 +119,19 @@ export default function SitesPage() {
         />
         <StatCard
           title="Online"
-          value={onlineSites}
+          value={counts.sitesOnline}
           icon={CheckCircle}
           iconColor="text-green-500"
         />
         <StatCard
           title="Offline"
-          value={offlineSites}
+          value={counts.sitesOffline}
           icon={XCircle}
           iconColor="text-red-500"
         />
         <StatCard
           title="Updates Available"
-          value={totalUpdates}
+          value={counts.totalUpdates}
           icon={AlertCircle}
           iconColor="text-amber-500"
         />
@@ -217,7 +210,7 @@ export default function SitesPage() {
                 <Button
                   size="icon-sm"
                   variant="ghost"
-                  onClick={(e) => deleteSite(site.id, e)}
+                  onClick={(e) => deleteSite(site.id, site.name, e)}
                 >
                   <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>

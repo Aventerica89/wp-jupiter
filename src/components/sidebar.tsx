@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,9 +9,18 @@ import {
   Download,
   Activity,
   Settings,
-  LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -23,19 +33,11 @@ const bottomItems = [
   { href: "/style-guide", label: "Settings", icon: Settings },
 ];
 
-export function Sidebar() {
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-60 flex-col bg-slate-900 text-slate-300">
-      {/* Logo */}
-      <div className="flex h-16 items-center gap-3 px-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
-          <Globe className="h-5 w-5 text-slate-900" />
-        </div>
-        <span className="text-lg font-semibold text-white">WP Manager</span>
-      </div>
-
+    <>
       {/* Main Navigation */}
       <nav className="flex-1 px-3 py-4">
         <ul className="space-y-1">
@@ -45,6 +47,7 @@ export function Sidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  onClick={onNavigate}
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
@@ -70,6 +73,7 @@ export function Sidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  onClick={onNavigate}
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
@@ -96,6 +100,61 @@ export function Sidebar() {
           </div>
         </div>
       </div>
-    </aside>
+    </>
+  );
+}
+
+function Logo() {
+  return (
+    <div className="flex h-16 items-center gap-3 px-6">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
+        <Globe className="h-5 w-5 text-slate-900" />
+      </div>
+      <span className="text-lg font-semibold text-white">WP Manager</span>
+    </div>
+  );
+}
+
+export function Sidebar() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between bg-slate-900 px-4 lg:hidden">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
+            <Globe className="h-5 w-5 text-slate-900" />
+          </div>
+          <span className="text-lg font-semibold text-white">WP Manager</span>
+        </div>
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="text-white hover:bg-slate-800">
+              <Menu className="h-6 w-6" />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-60 p-0 bg-slate-900 border-slate-800">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Navigation Menu</SheetTitle>
+            </SheetHeader>
+            <div className="flex h-full flex-col">
+              <Logo />
+              <SidebarContent onNavigate={() => setOpen(false)} />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {/* Mobile Spacer */}
+      <div className="h-16 lg:hidden" />
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex h-screen w-60 flex-col bg-slate-900 text-slate-300">
+        <Logo />
+        <SidebarContent />
+      </aside>
+    </>
   );
 }

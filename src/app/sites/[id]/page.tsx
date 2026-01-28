@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   RefreshCw,
   ExternalLink,
@@ -15,6 +16,7 @@ import {
   Settings,
   Globe,
   Heart,
+  Server,
 } from "lucide-react";
 
 interface Plugin {
@@ -46,6 +48,13 @@ interface Site {
   phpVersion: string | null;
   sslExpiry: string | null;
   lastChecked: string | null;
+  notes: string | null;
+  serverId: number | null;
+  serverName: string | null;
+  serverIp: string | null;
+  providerName: string | null;
+  providerSlug: string | null;
+  providerLogo: string | null;
   plugins: Plugin[];
   themes: Theme[];
 }
@@ -94,6 +103,7 @@ export default function SiteDetailPage({
       setSite(data);
     } catch (error) {
       console.error("Failed to fetch site:", error);
+      toast.error("Failed to load site");
     } finally {
       setLoading(false);
     }
@@ -104,8 +114,10 @@ export default function SiteDetailPage({
     try {
       await fetch(`/api/sites/${id}/health`);
       await fetchSite();
+      toast.success("Health check complete");
     } catch (error) {
       console.error("Health check failed:", error);
+      toast.error("Health check failed");
     } finally {
       setCheckingHealth(false);
     }
@@ -116,8 +128,10 @@ export default function SiteDetailPage({
     try {
       await fetch(`/api/sites/${id}/plugins`);
       await fetchSite();
+      toast.success("Sync complete");
     } catch (error) {
       console.error("Sync failed:", error);
+      toast.error("Sync failed");
     } finally {
       setSyncing(false);
     }
@@ -191,6 +205,42 @@ export default function SiteDetailPage({
         </div>
       </div>
 
+      {/* Server Info Banner */}
+      {site.serverId && (
+        <Card className="mb-6">
+          <CardContent className="py-4">
+            <Link
+              href={`/servers/${site.serverId}`}
+              className="flex items-center justify-between hover:bg-slate-50 -mx-6 px-6 py-2 rounded transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                {site.providerLogo ? (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white border p-1">
+                    <img
+                      src={site.providerLogo}
+                      alt={site.providerName || ""}
+                      className="h-6 w-6 object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+                    <Server className="h-5 w-5 text-slate-600" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-medium">{site.serverName}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {site.providerName || "Custom Server"}
+                    {site.serverIp && ` • ${site.serverIp}`}
+                  </p>
+                </div>
+              </div>
+              <Badge variant="secondary">View Server</Badge>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Grid */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -234,6 +284,18 @@ export default function SiteDetailPage({
           iconColor={themesWithUpdates.length > 0 ? "text-amber-500" : "text-slate-400"}
         />
       </div>
+
+      {/* Notes */}
+      {site.notes && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-base">Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="whitespace-pre-wrap text-sm">{site.notes}</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Plugins */}
       <Card className="mb-6">

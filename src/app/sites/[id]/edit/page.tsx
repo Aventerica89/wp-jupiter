@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { Save, Trash2, Settings } from "lucide-react";
 
 interface Site {
@@ -13,6 +14,14 @@ interface Site {
   name: string;
   url: string;
   apiUsername: string;
+  serverId: number | null;
+  notes: string | null;
+}
+
+interface ServerOption {
+  id: number;
+  name: string;
+  providerName: string | null;
 }
 
 export default function EditSitePage({
@@ -23,6 +32,7 @@ export default function EditSitePage({
   const { id } = use(params);
   const router = useRouter();
   const [site, setSite] = useState<Site | null>(null);
+  const [servers, setServers] = useState<ServerOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -32,23 +42,33 @@ export default function EditSitePage({
   const [url, setUrl] = useState("");
   const [apiUsername, setApiUsername] = useState("");
   const [apiPassword, setApiPassword] = useState("");
+  const [serverId, setServerId] = useState<number | null>(null);
+  const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    const fetchSite = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch(`/api/sites/${id}`);
-        const data = await res.json();
-        setSite(data);
-        setName(data.name);
-        setUrl(data.url);
-        setApiUsername(data.apiUsername || "");
+        const [siteRes, serversRes] = await Promise.all([
+          fetch(`/api/sites/${id}`),
+          fetch("/api/servers"),
+        ]);
+        const siteData = await siteRes.json();
+        const serversData = await serversRes.json();
+
+        setSite(siteData);
+        setServers(serversData);
+        setName(siteData.name);
+        setUrl(siteData.url);
+        setApiUsername(siteData.apiUsername || "");
+        setServerId(siteData.serverId || null);
+        setNotes(siteData.notes || "");
       } catch (err) {
         setError("Failed to load site");
       } finally {
         setLoading(false);
       }
     };
-    fetchSite();
+    fetchData();
   }, [id]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -57,7 +77,13 @@ export default function EditSitePage({
     setError(null);
 
     try {
-      const body: Record<string, string> = { name, url, apiUsername };
+      const body: Record<string, string | number | null> = {
+        name,
+        url,
+        apiUsername,
+        serverId,
+        notes: notes || null,
+      };
       if (apiPassword) {
         body.apiPassword = apiPassword;
       }
@@ -73,9 +99,11 @@ export default function EditSitePage({
         throw new Error(data.error || "Failed to update site");
       }
 
+      toast.success("Site updated");
       router.push(`/sites/${id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
+      toast.error("Failed to save changes");
     } finally {
       setSaving(false);
     }
@@ -88,9 +116,11 @@ export default function EditSitePage({
     try {
       const res = await fetch(`/api/sites/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
+      toast.success("Site deleted");
       router.push("/sites");
     } catch (err) {
       setError("Failed to delete site");
+      toast.error("Failed to delete site");
       setDeleting(false);
     }
   };
@@ -160,6 +190,27 @@ export default function EditSitePage({
                 />
               </div>
 
+              {/* Server Selection */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Server</label>
+                <select
+                  value={serverId || ""}
+                  onChange={(e) => setServerId(e.target.value ? Number(e.target.value) : null)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="">No server assigned</option>
+                  {servers.map((server) => (
+                    <option key={server.id} value={server.id}>
+                      {server.name}
+                      {server.providerName ? ` (${server.providerName})` : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Assign this site to a server for organization
+                </p>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">API Username</label>
                 <Input
@@ -186,6 +237,20 @@ export default function EditSitePage({
                 <p className="text-xs text-muted-foreground">
                   Application Password or WP Manager Connector secret key. Leave
                   blank to keep the current value.
+                </p>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Notes</label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Any notes about this site..."
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Add notes or changelog entries for this site
                 </p>
               </div>
 

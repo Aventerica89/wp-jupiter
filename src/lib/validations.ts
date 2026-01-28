@@ -5,6 +5,8 @@ export const createSiteSchema = z.object({
   url: z.string().url("Invalid URL format"),
   apiUsername: z.string().min(1, "Username is required"),
   apiPassword: z.string().min(1, "Password is required"),
+  serverId: z.number().int().positive().nullable().optional(),
+  notes: z.string().nullable().optional(),
 });
 
 export const updateSiteSchema = z.object({
@@ -16,6 +18,8 @@ export const updateSiteSchema = z.object({
   wpVersion: z.string().nullable().optional(),
   phpVersion: z.string().nullable().optional(),
   sslExpiry: z.string().nullable().optional(),
+  serverId: z.number().int().positive().nullable().optional(),
+  notes: z.string().nullable().optional(),
 });
 
 export const updatePluginSchema = z.object({

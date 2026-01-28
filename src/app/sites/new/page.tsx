@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -12,13 +12,29 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Globe } from "lucide-react";
+import { Globe, Server } from "lucide-react";
 import { validateSiteData, type SiteInput } from "@/lib/validation";
+
+interface ServerOption {
+  id: number;
+  name: string;
+  providerName: string | null;
+  providerLogo: string | null;
+}
 
 export default function NewSitePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [servers, setServers] = useState<ServerOption[]>([]);
+  const [selectedServerId, setSelectedServerId] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/servers")
+      .then((res) => res.json())
+      .then(setServers)
+      .catch((err) => console.error("Failed to fetch servers:", err));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,7 +61,10 @@ export default function NewSitePage() {
       const res = await fetch("/api/sites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validation.data),
+        body: JSON.stringify({
+          ...validation.data,
+          serverId: selectedServerId,
+        }),
       });
 
       if (!res.ok) {
@@ -133,6 +152,29 @@ export default function NewSitePage() {
                   type="text"
                   placeholder="https://example.com"
                 />
+              </div>
+
+              {/* Server Selection */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">
+                  Server (Optional)
+                </label>
+                <select
+                  value={selectedServerId || ""}
+                  onChange={(e) => setSelectedServerId(e.target.value ? Number(e.target.value) : null)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="">No server assigned</option>
+                  {servers.map((server) => (
+                    <option key={server.id} value={server.id}>
+                      {server.name}
+                      {server.providerName ? ` (${server.providerName})` : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Assign this site to a server for organization
+                </p>
               </div>
 
               <div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { sites } from "@/lib/db/schema";
+import { sites, servers, providers } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { encrypt } from "@/lib/crypto";
 import { createSiteSchema } from "@/lib/validations";
@@ -13,6 +13,11 @@ export async function GET() {
       with: {
         plugins: true,
         themes: true,
+        server: {
+          with: {
+            provider: true,
+          },
+        },
       },
     });
 
@@ -26,10 +31,18 @@ export async function GET() {
       status: site.status,
       sslExpiry: site.sslExpiry,
       lastChecked: site.lastChecked,
+      notes: site.notes,
       createdAt: site.createdAt,
       updatedAt: site.updatedAt,
       pluginUpdates: site.plugins.filter((p) => p.updateAvailable).length,
       themeUpdates: site.themes.filter((t) => t.updateAvailable).length,
+      serverId: site.serverId,
+      serverName: site.server?.name || null,
+      serverIp: site.server?.ipAddress || null,
+      providerId: site.server?.providerId || null,
+      providerName: site.server?.provider?.name || null,
+      providerSlug: site.server?.provider?.slug || null,
+      providerLogo: site.server?.provider?.logoUrl || null,
     }));
 
     return NextResponse.json(sitesWithCounts);
@@ -82,6 +95,8 @@ export async function POST(request: NextRequest) {
         apiUsername,
         apiPassword: encryptedPassword,
         status: "unknown",
+        serverId: body.serverId || null,
+        notes: body.notes || null,
       })
       .returning({
         id: sites.id,

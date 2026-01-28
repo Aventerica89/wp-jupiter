@@ -1,9 +1,37 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
+
+// Hosting providers (xCloud, Cloudways, Runcloud, etc.)
+export const providers = sqliteTable("providers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  slug: text("slug").notNull().unique(), // 'xcloud', 'cloudways', 'runcloud'
+  name: text("name").notNull(), // 'xCloud', 'Cloudways', 'RunCloud'
+  logoUrl: text("logo_url"), // URL to provider logo
+  dashboardUrl: text("dashboard_url"), // Base URL for dashboard (e.g., 'https://my.xcloud.host')
+  serverUrlPattern: text("server_url_pattern"), // Pattern for server links: '/servers/{serverId}'
+  docsUrl: text("docs_url"),
+  supportUrl: text("support_url"),
+  communityUrl: text("community_url"), // Facebook group, Discord, etc.
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Servers within a provider
+export const servers = sqliteTable("servers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  providerId: integer("provider_id").references(() => providers.id, { onDelete: "set null" }),
+  name: text("name").notNull(), // 'Production Server 1', 'Staging'
+  ipAddress: text("ip_address"), // '192.168.1.1'
+  externalId: text("external_id"), // Provider's ID for the server (for URL generation)
+  region: text("region"), // 'us-east-1', 'London', etc.
+  notes: text("notes"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
 
 // Sites table - stores WordPress site credentials and status
 export const sites = sqliteTable("sites", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  serverId: integer("server_id").references(() => servers.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   url: text("url").notNull().unique(),
   apiUsername: text("api_username").notNull(),
@@ -13,6 +41,7 @@ export const sites = sqliteTable("sites", {
   status: text("status", { enum: ["online", "offline", "unknown"] }).default("unknown"),
   sslExpiry: text("ssl_expiry"),
   lastChecked: text("last_checked"),
+  notes: text("notes"), // Site notes/changelog
   createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
 });
@@ -67,6 +96,9 @@ export const activityLog = sqliteTable("activity_log", {
       "theme_updated",
       "bulk_update_started",
       "bulk_update_completed",
+      "server_added",
+      "server_updated",
+      "provider_added",
       "error",
     ],
   }).notNull(),
@@ -92,7 +124,23 @@ export const updateLog = sqliteTable("update_log", {
 });
 
 // Relations
-export const sitesRelations = relations(sites, ({ many }) => ({
+export const providersRelations = relations(providers, ({ many }) => ({
+  servers: many(servers),
+}));
+
+export const serversRelations = relations(servers, ({ one, many }) => ({
+  provider: one(providers, {
+    fields: [servers.providerId],
+    references: [providers.id],
+  }),
+  sites: many(sites),
+}));
+
+export const sitesRelations = relations(sites, ({ one, many }) => ({
+  server: one(servers, {
+    fields: [sites.serverId],
+    references: [servers.id],
+  }),
   plugins: many(plugins),
   themes: many(themes),
   users: many(wpUsers),
@@ -136,6 +184,10 @@ export const updateLogRelations = relations(updateLog, ({ one }) => ({
 }));
 
 // Type exports
+export type Provider = typeof providers.$inferSelect;
+export type NewProvider = typeof providers.$inferInsert;
+export type Server = typeof servers.$inferSelect;
+export type NewServer = typeof servers.$inferInsert;
 export type Site = typeof sites.$inferSelect;
 export type NewSite = typeof sites.$inferInsert;
 export type Plugin = typeof plugins.$inferSelect;

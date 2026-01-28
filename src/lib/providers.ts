@@ -6,7 +6,7 @@
 export interface ProviderMetadata {
   slug: string;
   name: string;
-  logoUrl: string;
+  logoUrl: string | null;
   dashboardUrl: string;
   serverUrlPattern: string; // Use {serverId} as placeholder
   docsUrl: string;
@@ -15,6 +15,9 @@ export interface ProviderMetadata {
   description?: string;
 }
 
+// Using Simple Icons CDN for reliable logos where available
+// https://simpleicons.org/
+
 /**
  * Pre-configured hosting providers with metadata
  */
@@ -22,7 +25,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'xcloud',
     name: 'xCloud',
-    logoUrl: 'https://xcloud.host/wp-content/uploads/2023/06/xcloud-logo.svg',
+    logoUrl: null, // No Simple Icon available
     dashboardUrl: 'https://my.xcloud.host',
     serverUrlPattern: '/servers/{serverId}',
     docsUrl: 'https://xcloud.host/docs/',
@@ -33,7 +36,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'cloudways',
     name: 'Cloudways',
-    logoUrl: 'https://www.cloudways.com/wp-content/uploads/cloudways-logo-1.svg',
+    logoUrl: 'https://cdn.simpleicons.org/cloudways/2C39BD',
     dashboardUrl: 'https://platform.cloudways.com',
     serverUrlPattern: '/server/{serverId}/access_detail',
     docsUrl: 'https://support.cloudways.com/',
@@ -44,7 +47,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'runcloud',
     name: 'RunCloud',
-    logoUrl: 'https://runcloud.io/assets/images/runcloud-logo.svg',
+    logoUrl: null, // No Simple Icon available
     dashboardUrl: 'https://manage.runcloud.io',
     serverUrlPattern: '/servers/{serverId}',
     docsUrl: 'https://runcloud.io/docs',
@@ -55,7 +58,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'gridpane',
     name: 'GridPane',
-    logoUrl: 'https://gridpane.com/wp-content/uploads/2021/03/gridpane-logo.svg',
+    logoUrl: null, // No Simple Icon available
     dashboardUrl: 'https://my.gridpane.com',
     serverUrlPattern: '/servers/{serverId}',
     docsUrl: 'https://gridpane.com/kb/',
@@ -66,7 +69,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'spinupwp',
     name: 'SpinupWP',
-    logoUrl: 'https://spinupwp.com/wp-content/themes/developer-starter/img/spinupwp-logo.svg',
+    logoUrl: null, // No Simple Icon available
     dashboardUrl: 'https://spinupwp.app',
     serverUrlPattern: '/servers/{serverId}',
     docsUrl: 'https://spinupwp.com/docs/',
@@ -76,7 +79,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'ploi',
     name: 'Ploi',
-    logoUrl: 'https://ploi.io/images/logo.svg',
+    logoUrl: null, // No Simple Icon available
     dashboardUrl: 'https://ploi.io',
     serverUrlPattern: '/servers/{serverId}',
     docsUrl: 'https://ploi.io/documentation',
@@ -87,7 +90,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'kinsta',
     name: 'Kinsta',
-    logoUrl: 'https://kinsta.com/wp-content/themes/developer-starter/img/kinsta-logo.svg',
+    logoUrl: 'https://cdn.simpleicons.org/kinsta/5333ed',
     dashboardUrl: 'https://my.kinsta.com',
     serverUrlPattern: '/sites/{serverId}',
     docsUrl: 'https://kinsta.com/docs/',
@@ -97,7 +100,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'wpengine',
     name: 'WP Engine',
-    logoUrl: 'https://wpengine.com/wp-content/uploads/2021/04/WP-Engine-Logo-Dark.svg',
+    logoUrl: 'https://cdn.simpleicons.org/wpengine/0ECAD4',
     dashboardUrl: 'https://my.wpengine.com',
     serverUrlPattern: '/installs/{serverId}',
     docsUrl: 'https://wpengine.com/support/',
@@ -107,7 +110,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'flywheel',
     name: 'Flywheel',
-    logoUrl: 'https://getflywheel.com/wp-content/themes/developer-starter/img/flywheel-logo.svg',
+    logoUrl: null, // No Simple Icon available
     dashboardUrl: 'https://app.getflywheel.com',
     serverUrlPattern: '/sites/{serverId}',
     docsUrl: 'https://getflywheel.com/wordpress-support/',
@@ -117,7 +120,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'digitalocean',
     name: 'DigitalOcean',
-    logoUrl: 'https://www.digitalocean.com/_next/static/media/logo.87a8f3b8.svg',
+    logoUrl: 'https://cdn.simpleicons.org/digitalocean/0080FF',
     dashboardUrl: 'https://cloud.digitalocean.com',
     serverUrlPattern: '/droplets/{serverId}',
     docsUrl: 'https://docs.digitalocean.com/',
@@ -128,7 +131,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'vultr',
     name: 'Vultr',
-    logoUrl: 'https://www.vultr.com/media/logo_onwhite.svg',
+    logoUrl: 'https://cdn.simpleicons.org/vultr/007BFC',
     dashboardUrl: 'https://my.vultr.com',
     serverUrlPattern: '/subs/{serverId}',
     docsUrl: 'https://www.vultr.com/docs/',
@@ -138,7 +141,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'linode',
     name: 'Linode (Akamai)',
-    logoUrl: 'https://www.linode.com/wp-content/uploads/2021/01/Linode-Logo.svg',
+    logoUrl: 'https://cdn.simpleicons.org/linode/00A95C',
     dashboardUrl: 'https://cloud.linode.com',
     serverUrlPattern: '/linodes/{serverId}',
     docsUrl: 'https://www.linode.com/docs/',
@@ -149,7 +152,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'hetzner',
     name: 'Hetzner',
-    logoUrl: 'https://www.hetzner.com/assets/Uploads/Hetzner-Logo.svg',
+    logoUrl: 'https://cdn.simpleicons.org/hetzner/D50C2D',
     dashboardUrl: 'https://console.hetzner.cloud',
     serverUrlPattern: '/projects/default/servers/{serverId}',
     docsUrl: 'https://docs.hetzner.com/',
@@ -159,7 +162,7 @@ export const PROVIDERS: ProviderMetadata[] = [
   {
     slug: 'custom',
     name: 'Custom/Self-Managed',
-    logoUrl: '/icons/server.svg',
+    logoUrl: null,
     dashboardUrl: '',
     serverUrlPattern: '',
     docsUrl: '',

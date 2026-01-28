@@ -1,17 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { providers } from "@/lib/db/schema";
 import { PROVIDERS } from "@/lib/providers";
 import { eq } from "drizzle-orm";
 
-// GET /api/providers - List all providers (with seed if empty)
-export async function GET() {
+// GET /api/providers - List all providers (with seed/update)
+export async function GET(request: NextRequest) {
   try {
-    let allProviders = await db.select().from(providers);
+    const reseed = request.nextUrl.searchParams.get("reseed") === "true";
 
-    // Seed providers if table is empty
-    if (allProviders.length === 0) {
-      for (const provider of PROVIDERS) {
+    // Seed or update providers from static list
+    for (const provider of PROVIDERS) {
+      const existing = await db
+        .select()
+        .from(providers)
+        .where(eq(providers.slug, provider.slug))
+        .limit(1);
+
+      if (existing.length === 0) {
+        // Insert new provider
         await db.insert(providers).values({
           slug: provider.slug,
           name: provider.name,
@@ -22,10 +29,24 @@ export async function GET() {
           supportUrl: provider.supportUrl,
           communityUrl: provider.communityUrl,
         });
+      } else if (reseed) {
+        // Update existing provider if reseed requested
+        await db
+          .update(providers)
+          .set({
+            name: provider.name,
+            logoUrl: provider.logoUrl,
+            dashboardUrl: provider.dashboardUrl,
+            serverUrlPattern: provider.serverUrlPattern,
+            docsUrl: provider.docsUrl,
+            supportUrl: provider.supportUrl,
+            communityUrl: provider.communityUrl,
+          })
+          .where(eq(providers.slug, provider.slug));
       }
-      allProviders = await db.select().from(providers);
     }
 
+    const allProviders = await db.select().from(providers);
     return NextResponse.json(allProviders);
   } catch (error) {
     console.error("Error fetching providers:", error);

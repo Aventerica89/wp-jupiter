@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
+// SECURITY: Fail fast if no secret is configured in production
+const rawSecret = process.env.AUTH_SECRET || process.env.ENCRYPTION_SECRET;
+if (!rawSecret && process.env.NODE_ENV === "production") {
+  throw new Error("CRITICAL: AUTH_SECRET or ENCRYPTION_SECRET must be set in production");
+}
+
 const SECRET_KEY = new TextEncoder().encode(
-  process.env.AUTH_SECRET || process.env.ENCRYPTION_SECRET || "fallback-secret-change-me"
+  rawSecret || "dev-only-fallback-secret-not-for-production"
 );
 
 const SESSION_COOKIE = "wp-manager-session";

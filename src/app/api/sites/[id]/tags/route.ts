@@ -16,10 +16,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return invalidIdResponse();
     }
 
-    const { tagId } = await request.json();
+    const body = await request.json();
+    const tagId = body.tagId;
 
-    if (!tagId) {
-      return NextResponse.json({ error: "Tag ID is required" }, { status: 400 });
+    // HIGH FIX: Validate tagId is a positive integer
+    if (typeof tagId !== "number" || !Number.isInteger(tagId) || tagId <= 0) {
+      return NextResponse.json({ error: "Valid tag ID (positive integer) is required" }, { status: 400 });
     }
 
     // Check if tag already exists on site
@@ -53,10 +55,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return invalidIdResponse();
     }
 
-    const { tagId } = await request.json();
+    const body = await request.json();
+    const tagId = body.tagId;
 
-    if (!tagId) {
-      return NextResponse.json({ error: "Tag ID is required" }, { status: 400 });
+    // HIGH FIX: Validate tagId is a positive integer
+    if (typeof tagId !== "number" || !Number.isInteger(tagId) || tagId <= 0) {
+      return NextResponse.json({ error: "Valid tag ID (positive integer) is required" }, { status: 400 });
     }
 
     await db

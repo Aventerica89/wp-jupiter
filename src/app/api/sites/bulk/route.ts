@@ -18,6 +18,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // CRITICAL FIX: Validate that all siteIds are positive integers
+    if (!siteIds.every((id) => typeof id === "number" && Number.isInteger(id) && id > 0)) {
+      return NextResponse.json(
+        { error: "All site IDs must be valid positive integers" },
+        { status: 400 }
+      );
+    }
+
     // CRITICAL FIX: Add bulk operation limit
     if (siteIds.length > MAX_BULK_SITES) {
       return NextResponse.json(
@@ -119,9 +127,10 @@ export async function POST(request: NextRequest) {
       case "addTag":
         const { tagId } = params;
 
-        if (!tagId) {
+        // CRITICAL FIX: Validate tagId is a positive integer
+        if (!tagId || typeof tagId !== "number" || !Number.isInteger(tagId) || tagId <= 0) {
           return NextResponse.json(
-            { error: "Tag ID is required" },
+            { error: "Valid tag ID (positive integer) is required" },
             { status: 400 }
           );
         }
@@ -155,9 +164,10 @@ export async function POST(request: NextRequest) {
       case "removeTag":
         const { tagId: removeTagId } = params;
 
-        if (!removeTagId) {
+        // CRITICAL FIX: Validate removeTagId is a positive integer
+        if (!removeTagId || typeof removeTagId !== "number" || !Number.isInteger(removeTagId) || removeTagId <= 0) {
           return NextResponse.json(
-            { error: "Tag ID is required" },
+            { error: "Valid tag ID (positive integer) is required" },
             { status: 400 }
           );
         }

@@ -3,6 +3,15 @@ import { db } from "@/lib/db";
 import { notificationSettings } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { sanitizeError, apiError } from "@/lib/api-utils";
+import { z } from "zod";
+
+// HIGH FIX: Add comprehensive Zod validation
+const notificationSchema = z.object({
+  type: z.enum(["email", "slack", "discord", "webhook"]),
+  enabled: z.boolean().optional().default(true),
+  config: z.record(z.unknown()).optional(),
+  events: z.array(z.string()).optional(),
+});
 
 // GET /api/notifications - List all notification settings
 export async function GET() {
@@ -22,14 +31,17 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { type, enabled, config, events } = body;
 
-    if (!type) {
+    // HIGH FIX: Validate input with Zod schema
+    const result = notificationSchema.safeParse(body);
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Notification type is required" },
+        { error: "Validation failed", details: result.error.issues },
         { status: 400 }
       );
     }
+
+    const { type, enabled, config, events } = result.data;
 
     const [setting] = await db
       .insert(notificationSettings)

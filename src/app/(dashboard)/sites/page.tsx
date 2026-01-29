@@ -5,6 +5,15 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   Plus,
@@ -17,8 +26,24 @@ import {
   Star,
   Archive,
   FileDown,
+  Search,
+  Filter,
+  X,
+  Tag as TagIcon,
+  RefreshCw,
+  ArchiveRestore,
 } from "lucide-react";
 import { calculateUpdateCounts, type Site } from "@/lib/site-utils";
+
+interface SiteWithTags extends Site {
+  tags?: Array<{ id: number; name: string; color: string }>;
+}
+
+interface Tag {
+  id: number;
+  name: string;
+  color: string;
+}
 
 function StatCard({
   title,
@@ -47,8 +72,14 @@ function StatCard({
 }
 
 export default function SitesPage() {
-  const [sites, setSites] = useState<Site[]>([]);
+  const [sites, setSites] = useState<SiteWithTags[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedSites, setSelectedSites] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [tagFilter, setTagFilter] = useState<string>("all");
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   const fetchSites = async () => {
     try {
@@ -62,6 +93,21 @@ export default function SitesPage() {
       setLoading(false);
     }
   };
+
+  const fetchTags = async () => {
+    try {
+      const res = await fetch("/api/tags");
+      const data = await res.json();
+      setTags(data);
+    } catch (error) {
+      console.error("Failed to fetch tags:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSites();
+    fetchTags();
+  }, []);
 
   const deleteSite = async (id: number, name: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -112,12 +158,81 @@ export default function SitesPage() {
     }
   };
 
-  useEffect(() => {
-    fetchSites();
-  }, []);
+  const toggleSelectSite = (siteId: number) => {
+    setSelectedSites(prev =>
+      prev.includes(siteId)
+        ? prev.filter(id => id !== siteId)
+        : [...prev, siteId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedSites.length === filteredSites.length) {
+      setSelectedSites([]);
+    } else {
+      setSelectedSites(filteredSites.map(s => s.id));
+    }
+  };
+
+  const executeBulkAction = async (action: string, params?: any) => {
+    if (selectedSites.length === 0) {
+      toast.error("No sites selected");
+      return;
+    }
+
+    setBulkActionLoading(true);
+    try {
+      const res = await fetch("/api/sites/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          siteIds: selectedSites,
+          ...params,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Bulk action failed");
+
+      const result = await res.json();
+      toast.success(`Bulk action completed`, {
+        description: `${result.results.success} sites updated successfully`,
+      });
+
+      setSelectedSites([]);
+      fetchSites();
+    } catch (error) {
+      console.error("Bulk action failed:", error);
+      toast.error("Bulk action failed");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  // Filter sites
+  const filteredSites = sites.filter(site => {
+    // Search filter
+    if (searchQuery && !site.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        !site.url.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+
+    // Status filter
+    if (statusFilter !== "all" && site.status !== statusFilter) {
+      return false;
+    }
+
+    // Tag filter
+    if (tagFilter !== "all") {
+      const hasTag = site.tags?.some(t => t.id === parseInt(tagFilter));
+      if (!hasTag) return false;
+    }
+
+    return true;
+  });
 
   // Use TDD utility for calculations
-  const counts = calculateUpdateCounts(sites);
+  const counts = calculateUpdateCounts(filteredSites);
 
   if (loading) {
     return (
@@ -139,6 +254,12 @@ export default function SitesPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
+            <Link href="/tags">
+              <TagIcon className="mr-2 h-4 w-4" />
+              Manage Tags
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
             <Link href="/sites/archived">
               <Archive className="mr-2 h-4 w-4" />
               Archived
@@ -159,11 +280,142 @@ export default function SitesPage() {
         </div>
       </div>
 
+      {/* Search and Filters */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex flex-wrap gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search sites..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="online">Online</SelectItem>
+                <SelectItem value="offline">Offline</SelectItem>
+                <SelectItem value="unknown">Unknown</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={tagFilter} onValueChange={setTagFilter}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Tags" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tags</SelectItem>
+                {tags.map(tag => (
+                  <SelectItem key={tag.id} value={tag.id.toString()}>
+                    {tag.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {(searchQuery || statusFilter !== "all" || tagFilter !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("all");
+                  setTagFilter("all");
+                }}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Clear
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bulk Actions Toolbar */}
+      {selectedSites.length > 0 && (
+        <Card className="mb-6 border-blue-200 bg-blue-50">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="font-medium text-blue-900">
+                  {selectedSites.length} site{selectedSites.length !== 1 ? "s" : ""} selected
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={toggleSelectAll}
+                >
+                  {selectedSites.length === filteredSites.length ? "Deselect All" : "Select All"}
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => executeBulkAction("sync")}
+                  disabled={bulkActionLoading}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Sync
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => executeBulkAction("favorite")}
+                  disabled={bulkActionLoading}
+                >
+                  <Star className="mr-2 h-4 w-4" />
+                  Favorite
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => executeBulkAction("archive")}
+                  disabled={bulkActionLoading}
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const tagId = prompt("Enter tag ID to add:");
+                    if (tagId) executeBulkAction("addTag", { tagId: parseInt(tagId) });
+                  }}
+                  disabled={bulkActionLoading}
+                >
+                  <TagIcon className="mr-2 h-4 w-4" />
+                  Add Tag
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => {
+                    if (confirm(`Delete ${selectedSites.length} sites?`)) {
+                      executeBulkAction("delete");
+                    }
+                  }}
+                  disabled={bulkActionLoading}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Grid */}
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Sites"
-          value={sites.length}
+          value={filteredSites.length}
           icon={Globe}
           iconColor="text-slate-400"
         />
@@ -188,21 +440,34 @@ export default function SitesPage() {
       </div>
 
       {/* Sites Grid */}
-      {sites.length === 0 ? (
+      {filteredSites.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">No sites added yet.</p>
-            <Button asChild className="mt-4">
-              <Link href="/sites/new">Add Your First Site</Link>
-            </Button>
+            <p className="text-muted-foreground">
+              {sites.length === 0 ? "No sites added yet." : "No sites match your filters."}
+            </p>
+            {sites.length === 0 && (
+              <Button asChild className="mt-4">
+                <Link href="/sites/new">Add Your First Site</Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sites.map((site) => (
+          {filteredSites.map((site) => (
             <Card key={site.id} className="group relative">
+              {/* Checkbox for selection */}
+              <div className="absolute left-3 top-3 z-10">
+                <Checkbox
+                  checked={selectedSites.includes(site.id)}
+                  onCheckedChange={() => toggleSelectSite(site.id)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+
               <Link href={`/sites/${site.id}`} className="block">
-                <CardHeader>
+                <CardHeader className="pl-12">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
@@ -232,7 +497,7 @@ export default function SitesPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-2">
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
                     {site.pluginUpdates > 0 && (
                       <Badge variant="warning">
                         {site.pluginUpdates} plugin{site.pluginUpdates !== 1 ? "s" : ""}
@@ -247,43 +512,64 @@ export default function SitesPage() {
                       <span className="text-sm text-muted-foreground">Up to date</span>
                     )}
                   </div>
+                  {/* Tags */}
+                  {site.tags && site.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {site.tags.map(tag => (
+                        <Badge
+                          key={tag.id}
+                          style={{
+                            backgroundColor: tag.color,
+                            color: "#fff",
+                            fontSize: "0.7rem",
+                          }}
+                        >
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Link>
-              <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="absolute right-2 top-2 flex gap-0.5 rounded-lg bg-white/80 backdrop-blur-sm p-0.5 shadow-sm opacity-0 transition-opacity group-hover:opacity-100">
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  className="h-7 w-7"
                   aria-label={site.isFavorite ? `Remove ${site.name} from favorites` : `Add ${site.name} to favorites`}
                   onClick={(e) => toggleFavorite(site.id, e)}
                 >
-                  <Star className={`h-4 w-4 ${site.isFavorite ? "fill-amber-400 text-amber-400" : ""}`} />
+                  <Star className={`h-3.5 w-3.5 ${site.isFavorite ? "fill-amber-400 text-amber-400" : ""}`} />
                 </Button>
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  className="h-7 w-7"
                   aria-label={`Open ${site.name} in new tab`}
                   onClick={(e) => {
                     e.preventDefault();
                     window.open(site.url, "_blank");
                   }}
                 >
-                  <ExternalLink className="h-4 w-4" />
+                  <ExternalLink className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  className="h-7 w-7"
                   aria-label={`Archive ${site.name}`}
                   onClick={(e) => archiveSite(site.id, site.name, e)}
                 >
-                  <Archive className="h-4 w-4" />
+                  <Archive className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   size="icon-sm"
                   variant="ghost"
+                  className="h-7 w-7"
                   aria-label={`Delete ${site.name}`}
                   onClick={(e) => deleteSite(site.id, site.name, e)}
                 >
-                  <Trash2 className="h-4 w-4 text-red-500" />
+                  <Trash2 className="h-3.5 w-3.5 text-red-500" />
                 </Button>
               </div>
             </Card>

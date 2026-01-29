@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
           },
         },
         project: true,
+        tags: {
+          with: {
+            tag: true,
+          },
+        },
       },
     });
 
@@ -58,6 +63,7 @@ export async function GET(request: NextRequest) {
         projectId: site.projectId,
         projectName: site.project?.name || null,
         projectColor: site.project?.color || null,
+        tags: site.tags.map((st) => st.tag),
       }))
       .sort((a, b) => {
         // Favorites first

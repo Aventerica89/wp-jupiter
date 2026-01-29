@@ -10,7 +10,6 @@ import {
   Shield,
   Clock,
   Database,
-  Settings,
   ChevronRight,
 } from "lucide-react";
 import { Breadcrumb } from "@/components/ui/breadcrumb";

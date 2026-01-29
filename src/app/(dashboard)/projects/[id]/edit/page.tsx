@@ -104,6 +104,7 @@ export default function EditProjectPage({
       router.push("/projects");
     } catch (err) {
       toast.error("Failed to delete project");
+    } finally {
       setDeleting(false);
     }
   };

@@ -140,6 +140,7 @@ export default function EditServerPage({
       router.push("/servers");
     } catch (err) {
       toast.error("Failed to delete server");
+    } finally {
       setDeleting(false);
     }
   };

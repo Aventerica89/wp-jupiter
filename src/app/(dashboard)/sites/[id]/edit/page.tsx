@@ -55,6 +55,7 @@ export default function EditSitePage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [tagging, setTagging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState("");
@@ -100,6 +101,8 @@ export default function EditSitePage({
   }, [id]);
 
   const addTag = async (tag: Tag) => {
+    if (tagging) return;
+    setTagging(true);
     try {
       const res = await fetch(`/api/sites/${id}/tags`, {
         method: "POST",
@@ -107,14 +110,18 @@ export default function EditSitePage({
         body: JSON.stringify({ tagId: tag.id }),
       });
       if (!res.ok) throw new Error("Failed to add tag");
-      setSelectedTags([...selectedTags, tag]);
+      setSelectedTags((prev) => [...prev, tag]);
       toast.success(`Tag "${tag.name}" added`);
     } catch (err) {
       toast.error("Failed to add tag");
+    } finally {
+      setTagging(false);
     }
   };
 
   const removeTag = async (tag: Tag) => {
+    if (tagging) return;
+    setTagging(true);
     try {
       const res = await fetch(`/api/sites/${id}/tags`, {
         method: "DELETE",
@@ -122,10 +129,12 @@ export default function EditSitePage({
         body: JSON.stringify({ tagId: tag.id }),
       });
       if (!res.ok) throw new Error("Failed to remove tag");
-      setSelectedTags(selectedTags.filter((t) => t.id !== tag.id));
+      setSelectedTags((prev) => prev.filter((t) => t.id !== tag.id));
       toast.success(`Tag "${tag.name}" removed`);
     } catch (err) {
       toast.error("Failed to remove tag");
+    } finally {
+      setTagging(false);
     }
   };
 
@@ -325,7 +334,8 @@ export default function EditSitePage({
                       <button
                         type="button"
                         onClick={() => removeTag(tag)}
-                        className="ml-1 rounded-full p-0.5 hover:bg-black/10"
+                        disabled={tagging}
+                        className="ml-1 rounded-full p-0.5 hover:bg-black/10 disabled:opacity-50"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -343,7 +353,8 @@ export default function EditSitePage({
                         key={tag.id}
                         type="button"
                         onClick={() => addTag(tag)}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border hover:bg-slate-100 transition-colors"
+                        disabled={tagging}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ borderColor: tag.color, color: tag.color }}
                       >
                         <Plus className="h-3 w-3" />

@@ -18,6 +18,7 @@ import {
   Heart,
   Server,
 } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface Plugin {
   id: number;
@@ -162,6 +163,13 @@ export default function SiteDetailPage({
 
   return (
     <div className="p-8">
+      <Breadcrumb
+        items={[
+          { label: "Sites", href: "/sites" },
+          { label: site.name },
+        ]}
+      />
+
       {/* Header */}
       <div className="mb-8 flex items-start justify-between">
         <div className="flex items-center gap-4">

@@ -5,11 +5,11 @@ import { eq } from "drizzle-orm";
 import { sanitizeError, apiError } from "@/lib/api-utils";
 
 // GET /api/notifications - List all notification settings
-export async function GET() => {
+export async function GET() {
   try {
     const settings = await db.query.notificationSettings.findMany({
       orderBy: (settings, { desc }) => [desc(settings.createdAt)],
-    }
+    });
 
     return NextResponse.json(settings);
   } catch (error) {
@@ -19,7 +19,7 @@ export async function GET() => {
 }
 
 // POST /api/notifications - Create notification setting
-export async function POST(request: NextRequest) => {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { type, enabled, config, events } = body;
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) => {
       })
       .returning();
 
-    return NextResponse.json(setting, { status: 201 }
+    return NextResponse.json(setting, { status: 201 });
   } catch (error) {
     console.error("Failed to create notification setting:", sanitizeError(error));
     return apiError("Failed to create notification setting");

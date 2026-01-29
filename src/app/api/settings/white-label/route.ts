@@ -19,7 +19,7 @@ const whiteLabelSchema = z.object({
 }
 
 // GET /api/settings/white-label - Get white label settings
-export async function GET() => {
+export async function GET() {
   try {
     // There should only be one white label settings record
     const settings = await db.query.whiteLabelSettings.findFirst();
@@ -37,7 +37,7 @@ export async function GET() => {
         supportEmail: null,
         supportUrl: null,
         footerText: null,
-      }
+      });
     }
 
     return NextResponse.json(settings);
@@ -48,7 +48,7 @@ export async function GET() => {
 }
 
 // POST /api/settings/white-label - Update white label settings
-export async function POST(request: NextRequest) => {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) => {
         .values(validated)
         .returning();
 
-      return NextResponse.json(created, { status: 201 }
+      return NextResponse.json(created, { status: 201 });
     }
   } catch (error) {
     console.error("Failed to update white label settings:", sanitizeError(error));

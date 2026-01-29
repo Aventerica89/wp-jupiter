@@ -14,26 +14,29 @@ export function LogoIcon({ className }: LogoIconProps) {
     >
       <defs>
         <linearGradient id="logoIconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3b82f6" />
-          <stop offset="100%" stopColor="#1d4ed8" />
+          <stop offset="0%" stopColor="#8B5CF6" />
+          <stop offset="50%" stopColor="#A855F7" />
+          <stop offset="100%" stopColor="#EC4899" />
         </linearGradient>
       </defs>
+
       {/* Background rounded square */}
       <rect x="2" y="2" width="28" height="28" rx="6" fill="url(#logoIconGradient)" />
-      {/* W letter */}
+
+      {/* Hub dots around center */}
+      <circle cx="16" cy="6" r="2" fill="white" opacity="0.8" />
+      <circle cx="24" cy="12" r="1.5" fill="white" opacity="0.7" />
+      <circle cx="24" cy="20" r="1.5" fill="white" opacity="0.7" />
+      <circle cx="16" cy="26" r="2" fill="white" opacity="0.8" />
+      <circle cx="8" cy="20" r="1.5" fill="white" opacity="0.7" />
+      <circle cx="8" cy="12" r="1.5" fill="white" opacity="0.7" />
+
+      {/* Central hub with W */}
+      <rect x="10" y="10" width="12" height="12" rx="3" fill="white" />
       <path
-        d="M8 10 L11 22 L14 14 L17 22 L20 10"
-        stroke="white"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      {/* P letter arc */}
-      <path
-        d="M22 10 L22 16 Q22 22 28 19"
-        stroke="white"
-        strokeWidth="2.5"
+        d="M12.5 13 L14 19 L16 15 L18 19 L19.5 13"
+        stroke="url(#logoIconGradient)"
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"

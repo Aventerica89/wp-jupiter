@@ -12,11 +12,11 @@ import {
   Activity,
   Settings,
   Menu,
-  X,
   Tag,
   BarChart3,
   Bell,
 } from "lucide-react";
+import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -114,13 +114,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function Logo() {
+function SidebarLogo() {
   return (
-    <div className="flex h-16 items-center gap-3 px-6">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
-        <Globe className="h-5 w-5 text-slate-900" />
-      </div>
-      <span className="text-lg font-semibold text-white">WP Manager</span>
+    <div className="flex h-16 items-center px-6">
+      <Logo />
     </div>
   );
 }
@@ -132,12 +129,7 @@ export function Sidebar() {
     <>
       {/* Mobile Header */}
       <div className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between bg-slate-900 px-4 lg:hidden">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white">
-            <Globe className="h-5 w-5 text-slate-900" />
-          </div>
-          <span className="text-lg font-semibold text-white">WP Manager</span>
-        </div>
+        <Logo />
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="text-white hover:bg-slate-800">
@@ -150,7 +142,7 @@ export function Sidebar() {
               <SheetTitle>Navigation Menu</SheetTitle>
             </SheetHeader>
             <div className="flex h-full flex-col">
-              <Logo />
+              <SidebarLogo />
               <SidebarContent onNavigate={() => setOpen(false)} />
             </div>
           </SheetContent>
@@ -162,7 +154,7 @@ export function Sidebar() {
 
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex h-screen w-60 flex-col bg-slate-900 text-slate-300">
-        <Logo />
+        <SidebarLogo />
         <SidebarContent />
       </aside>
     </>

@@ -5,6 +5,14 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "WP Manager - WordPress Site Dashboard",
   description: "Manage all your WordPress sites from one dashboard",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/apple-icon.svg", type: "image/svg+xml" },
+    ],
+  },
 };
 
 export default function RootLayout({

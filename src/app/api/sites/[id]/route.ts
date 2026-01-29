@@ -24,6 +24,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           },
         },
         project: true,
+        tags: {
+          with: {
+            tag: true,
+          },
+        },
       },
     });
 
@@ -32,7 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Strip sensitive data and add server/project info
-    const { apiPassword, server, project, ...safeSite } = site;
+    const { apiPassword, server, project, tags, ...safeSite } = site;
     return NextResponse.json({
       ...safeSite,
       serverName: server?.name || null,
@@ -42,6 +47,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       providerLogo: server?.provider?.logoUrl || null,
       projectName: project?.name || null,
       projectColor: project?.color || null,
+      tags: tags?.map((st) => st.tag) || [],
     });
   } catch (error) {
     console.error("Failed to fetch site:", error);

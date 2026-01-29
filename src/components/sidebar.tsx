@@ -14,7 +14,6 @@ import {
   Menu,
   Tag,
   BarChart3,
-  Bell,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
@@ -39,8 +38,7 @@ const navItems = [
 ];
 
 const bottomItems = [
-  { href: "/settings/notifications", label: "Notifications", icon: Bell },
-  { href: "/style-guide", label: "Settings", icon: Settings },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {

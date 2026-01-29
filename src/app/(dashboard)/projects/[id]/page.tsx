@@ -7,14 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  ArrowLeft,
   FolderOpen,
   Globe,
   ExternalLink,
   CheckCircle,
   XCircle,
   Star,
+  Edit,
 } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface Site {
   id: number;
@@ -93,14 +94,15 @@ export default function ProjectDetailPage({
 
   return (
     <div className="p-8">
+      <Breadcrumb
+        items={[
+          { label: "Projects", href: "/projects" },
+          { label: project.name },
+        ]}
+      />
+
       {/* Header */}
       <div className="mb-8">
-        <Button variant="ghost" size="sm" asChild className="mb-4">
-          <Link href="/projects">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Projects
-          </Link>
-        </Button>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
             <div
@@ -118,6 +120,12 @@ export default function ProjectDetailPage({
               )}
             </div>
           </div>
+          <Button variant="outline" asChild>
+            <Link href={`/projects/${id}/edit`}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Project
+            </Link>
+          </Button>
         </div>
       </div>
 

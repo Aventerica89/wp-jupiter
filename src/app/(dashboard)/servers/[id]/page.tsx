@@ -16,10 +16,10 @@ import {
   Users,
   Copy,
   Edit,
-  ArrowLeft,
   CheckCircle,
   XCircle,
 } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface Site {
   id: number;
@@ -101,14 +101,12 @@ export default function ServerDetailPage() {
 
   return (
     <div className="p-8">
-      {/* Back button */}
-      <Link
-        href="/servers"
-        className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="mr-1 h-4 w-4" />
-        Back to Servers
-      </Link>
+      <Breadcrumb
+        items={[
+          { label: "Servers", href: "/servers" },
+          { label: server.name },
+        ]}
+      />
 
       {/* Header */}
       <div className="mb-8 flex items-start justify-between">

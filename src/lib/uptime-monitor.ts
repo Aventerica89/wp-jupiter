@@ -174,7 +174,7 @@ export async function getUptimeStats(siteId: number, hours: number = 24) {
     limit: 1000,
   });
 
-  const recentChecks = checks.filter((c) => c.checkedAt >= since);
+  const recentChecks = checks.filter((c) => c.checkedAt && c.checkedAt >= since);
 
   const totalChecks = recentChecks.length;
   const upChecks = recentChecks.filter((c) => c.status === "up").length;

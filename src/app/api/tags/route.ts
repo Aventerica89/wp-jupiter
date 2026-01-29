@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 import { tags } from "@/lib/db/schema";
 import { inArray } from "drizzle-orm";
 import { sanitizeError, apiError } from "@/lib/api-utils";
-import { withAuth } from "@/lib/auth-middleware";
 import { z } from "zod";
 
 const tagSchema = z.object({
@@ -12,7 +11,7 @@ const tagSchema = z.object({
 });
 
 // GET /api/tags - List all tags
-export const GET = withAuth(async () => {
+export async function GET() {
   try {
     const allTags = await db.query.tags.findMany({
       orderBy: (tags, { asc }) => [asc(tags.name)],
@@ -23,10 +22,10 @@ export const GET = withAuth(async () => {
     console.error("Failed to fetch tags:", sanitizeError(error));
     return apiError("Failed to fetch tags");
   }
-});
+}
 
 // POST /api/tags - Create a new tag
-export const POST = withAuth(async (request: NextRequest) => {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
@@ -54,10 +53,10 @@ export const POST = withAuth(async (request: NextRequest) => {
     console.error("Failed to create tag:", sanitizeError(error));
     return apiError("Failed to create tag");
   }
-});
+}
 
 // DELETE /api/tags - Bulk delete tags
-export const DELETE = withAuth(async (request: NextRequest) => {
+export async function DELETE(request: NextRequest) {
   try {
     const { ids } = await request.json();
 
@@ -73,4 +72,4 @@ export const DELETE = withAuth(async (request: NextRequest) => {
     console.error("Failed to delete tags:", sanitizeError(error));
     return apiError("Failed to delete tags");
   }
-});
+}

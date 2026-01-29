@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkAllSitesUptime } from "@/lib/uptime-monitor";
 import { sanitizeError, apiError } from "@/lib/api-utils";
-import { withAuth } from "@/lib/auth-middleware";
 
 // HIGH FIX: Add rate limiting to prevent abuse
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
@@ -19,7 +18,7 @@ setInterval(() => {
 }, 300000);
 
 // POST /api/uptime/check - Run uptime checks on all sites
-export const POST = withAuth(async (request: NextRequest) => {
+export async function POST(request: NextRequest) => {
   try {
     // Rate limiting check
     const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
@@ -36,7 +35,7 @@ export const POST = withAuth(async (request: NextRequest) => {
       }
       record.count++;
     } else {
-      requestCounts.set(ip, { count: 1, timestamp: now });
+      requestCounts.set(ip, { count: 1, timestamp: now }
     }
 
     // Perform uptime checks
@@ -50,9 +49,9 @@ export const POST = withAuth(async (request: NextRequest) => {
         status: r.status,
         responseTime: r.responseTime,
       })),
-    });
+    }
   } catch (error) {
     console.error("Uptime check failed:", sanitizeError(error));
     return apiError("Uptime check failed");
   }
-});
+}

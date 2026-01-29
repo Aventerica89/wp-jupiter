@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 import { tags } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { parseId, invalidIdResponse, sanitizeError, apiError } from "@/lib/api-utils";
-import { withAuth } from "@/lib/auth-middleware";
 import { z } from "zod";
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -11,10 +10,10 @@ type RouteParams = { params: Promise<{ id: string }> };
 const updateTagSchema = z.object({
   name: z.string().min(1).max(50).trim().optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Invalid hex color").optional(),
-});
+}
 
 // PUT /api/tags/[id] - Update a tag
-export const PUT = withAuth(async (request: NextRequest, { params }: RouteParams) => {
+export async function PUT(request: NextRequest, { params }: RouteParams) => {
   try {
     const { id } = await params;
     const tagId = parseId(id);
@@ -46,7 +45,7 @@ export const PUT = withAuth(async (request: NextRequest, { params }: RouteParams
       .returning();
 
     if (!updated) {
-      return NextResponse.json({ error: "Tag not found" }, { status: 404 });
+      return NextResponse.json({ error: "Tag not found" }, { status: 404 }
     }
 
     return NextResponse.json(updated);
@@ -54,10 +53,10 @@ export const PUT = withAuth(async (request: NextRequest, { params }: RouteParams
     console.error("Failed to update tag:", sanitizeError(error));
     return apiError("Failed to update tag");
   }
-});
+}
 
 // DELETE /api/tags/[id] - Delete a tag
-export const DELETE = withAuth(async (request: NextRequest, { params }: RouteParams) => {
+export async function DELETE(request: NextRequest, { params }: RouteParams) => {
   try {
     const { id } = await params;
     const tagId = parseId(id);
@@ -68,9 +67,9 @@ export const DELETE = withAuth(async (request: NextRequest, { params }: RoutePar
 
     await db.delete(tags).where(eq(tags.id, tagId));
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }
   } catch (error) {
     console.error("Failed to delete tag:", sanitizeError(error));
     return apiError("Failed to delete tag");
   }
-});
+}

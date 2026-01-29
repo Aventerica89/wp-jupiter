@@ -157,6 +157,48 @@ export async function POST(request: NextRequest) {
               }
             }
 
+            // Re-sync plugins and themes from WordPress to get actual state
+            // This ensures our database reflects reality after updates
+            try {
+              const [freshPlugins, freshThemes] = await Promise.all([
+                wp.getPlugins(),
+                wp.getThemes(),
+              ]);
+
+              // Update plugin states from WordPress
+              for (const p of freshPlugins) {
+                await db
+                  .update(plugins)
+                  .set({
+                    version: p.version,
+                    updateAvailable: !!p.update,
+                    newVersion: p.update?.version || null,
+                    isActive: p.status === "active",
+                  })
+                  .where(
+                    and(eq(plugins.siteId, siteId), eq(plugins.slug, p.plugin))
+                  );
+              }
+
+              // Update theme states from WordPress
+              for (const t of freshThemes) {
+                await db
+                  .update(themes)
+                  .set({
+                    version: t.version,
+                    updateAvailable: !!t.update,
+                    newVersion: t.update?.version || null,
+                    isActive: t.status === "active",
+                  })
+                  .where(
+                    and(eq(themes.siteId, siteId), eq(themes.slug, t.stylesheet))
+                  );
+              }
+            } catch (syncError) {
+              console.error(`Re-sync failed for site ${siteId}:`, syncError);
+              // Don't fail the whole operation, just log the sync error
+            }
+
             return updateResults;
           } catch (siteError) {
             return siteUpdates.map((u) => ({

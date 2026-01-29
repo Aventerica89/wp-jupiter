@@ -386,7 +386,7 @@ class WP_Manager_Connector {
                             <label for="wp_manager_secret">Secret Key</label>
                         </th>
                         <td>
-                            <input type="text"
+                            <input type="password"
                                    id="wp_manager_secret"
                                    name="wp_manager_secret"
                                    value="<?php echo esc_attr($secret); ?>"

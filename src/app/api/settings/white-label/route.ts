@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 import { whiteLabelSettings } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { sanitizeError, apiError } from "@/lib/api-utils";
-import { withAuth } from "@/lib/auth-middleware";
 import { z } from "zod";
 
 // CRITICAL FIX: Validate all white-label settings input
@@ -17,10 +16,10 @@ const whiteLabelSchema = z.object({
   supportEmail: z.string().email().max(255).optional().nullable(),
   supportUrl: z.string().url().max(500).optional().nullable(),
   footerText: z.string().max(500).optional().nullable(),
-});
+}
 
 // GET /api/settings/white-label - Get white label settings
-export const GET = withAuth(async () => {
+export async function GET() => {
   try {
     // There should only be one white label settings record
     const settings = await db.query.whiteLabelSettings.findFirst();
@@ -38,7 +37,7 @@ export const GET = withAuth(async () => {
         supportEmail: null,
         supportUrl: null,
         footerText: null,
-      });
+      }
     }
 
     return NextResponse.json(settings);
@@ -46,10 +45,10 @@ export const GET = withAuth(async () => {
     console.error("Failed to fetch white label settings:", sanitizeError(error));
     return apiError("Failed to fetch white label settings");
   }
-});
+}
 
 // POST /api/settings/white-label - Update white label settings
-export const POST = withAuth(async (request: NextRequest) => {
+export async function POST(request: NextRequest) => {
   try {
     const body = await request.json();
 
@@ -86,10 +85,10 @@ export const POST = withAuth(async (request: NextRequest) => {
         .values(validated)
         .returning();
 
-      return NextResponse.json(created, { status: 201 });
+      return NextResponse.json(created, { status: 201 }
     }
   } catch (error) {
     console.error("Failed to update white label settings:", sanitizeError(error));
     return apiError("Failed to update white label settings");
   }
-});
+}

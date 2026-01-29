@@ -3,12 +3,11 @@ import { db } from "@/lib/db";
 import { sites, siteTags, activityLog } from "@/lib/db/schema";
 import { eq, inArray, and } from "drizzle-orm";
 import { sanitizeError, apiError } from "@/lib/api-utils";
-import { withAuth } from "@/lib/auth-middleware";
 
 const MAX_BULK_SITES = 100;
 
 // POST /api/sites/bulk - Perform bulk operations on sites
-export const POST = withAuth(async (request: NextRequest) => {
+export async function POST(request: NextRequest) => {
   try {
     const { action, siteIds, ...params } = await request.json();
 
@@ -220,4 +219,4 @@ export const POST = withAuth(async (request: NextRequest) => {
     console.error("Bulk operation failed:", sanitizeError(error));
     return apiError("Bulk operation failed");
   }
-});
+}

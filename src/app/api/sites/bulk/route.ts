@@ -7,7 +7,7 @@ import { sanitizeError, apiError } from "@/lib/api-utils";
 const MAX_BULK_SITES = 100;
 
 // POST /api/sites/bulk - Perform bulk operations on sites
-export async function POST(request: NextRequest) => {
+export async function POST(request: NextRequest) {
   try {
     const { action, siteIds, ...params } = await request.json();
 

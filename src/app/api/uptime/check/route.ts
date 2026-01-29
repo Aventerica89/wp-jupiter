@@ -18,7 +18,7 @@ setInterval(() => {
 }, 300000);
 
 // POST /api/uptime/check - Run uptime checks on all sites
-export async function POST(request: NextRequest) => {
+export async function POST(request: NextRequest) {
   try {
     // Rate limiting check
     const ip = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) => {
       }
       record.count++;
     } else {
-      requestCounts.set(ip, { count: 1, timestamp: now }
+      requestCounts.set(ip, { count: 1, timestamp: now });
     }
 
     // Perform uptime checks
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) => {
         status: r.status,
         responseTime: r.responseTime,
       })),
-    }
+    });
   } catch (error) {
     console.error("Uptime check failed:", sanitizeError(error));
     return apiError("Uptime check failed");

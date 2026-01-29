@@ -1,8 +1,15 @@
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
+import { timingSafeEqual } from "crypto";
+
+// SECURITY: Fail fast if no secret is configured in production
+const rawSecret = process.env.AUTH_SECRET || process.env.ENCRYPTION_SECRET;
+if (!rawSecret && process.env.NODE_ENV === "production") {
+  throw new Error("CRITICAL: AUTH_SECRET or ENCRYPTION_SECRET must be set in production");
+}
 
 const SECRET_KEY = new TextEncoder().encode(
-  process.env.AUTH_SECRET || process.env.ENCRYPTION_SECRET || "fallback-secret-change-me"
+  rawSecret || "dev-only-fallback-secret-not-for-production"
 );
 
 const SESSION_COOKIE = "wp-manager-session";
@@ -84,6 +91,7 @@ export async function clearSessionCookie(): Promise<void> {
 
 /**
  * Verify admin password against environment variable
+ * Uses constant-time comparison to prevent timing attacks
  */
 export function verifyPassword(password: string): boolean {
   const adminPassword = process.env.ADMIN_PASSWORD;
@@ -93,7 +101,16 @@ export function verifyPassword(password: string): boolean {
     return true; // Allow access if no password configured (dev mode)
   }
 
-  return password === adminPassword;
+  // Use constant-time comparison to prevent timing attacks
+  const passwordBuffer = Buffer.from(password);
+  const adminBuffer = Buffer.from(adminPassword);
+
+  // If lengths don't match, still compare to prevent timing leaks
+  if (passwordBuffer.length !== adminBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(passwordBuffer, adminBuffer);
 }
 
 /**

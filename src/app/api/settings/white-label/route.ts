@@ -16,7 +16,7 @@ const whiteLabelSchema = z.object({
   supportEmail: z.string().email().max(255).optional().nullable(),
   supportUrl: z.string().url().max(500).optional().nullable(),
   footerText: z.string().max(500).optional().nullable(),
-}
+});
 
 // GET /api/settings/white-label - Get white label settings
 export async function GET() {

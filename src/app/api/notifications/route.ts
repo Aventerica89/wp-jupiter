@@ -9,7 +9,7 @@ import { z } from "zod";
 const notificationSchema = z.object({
   type: z.enum(["email", "slack", "discord", "webhook"]),
   enabled: z.boolean().optional().default(true),
-  config: z.record(z.unknown()).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
   events: z.array(z.string()).optional(),
 });
 

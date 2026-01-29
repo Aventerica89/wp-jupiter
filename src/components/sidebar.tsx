@@ -13,6 +13,9 @@ import {
   Settings,
   Menu,
   X,
+  Tag,
+  BarChart3,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,6 +30,8 @@ import {
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/sites", label: "Sites", icon: Globe },
+  { href: "/tags", label: "Tags", icon: Tag },
+  { href: "/monitoring", label: "Monitoring", icon: BarChart3 },
   { href: "/servers", label: "Servers", icon: Server },
   { href: "/projects", label: "Projects", icon: FolderOpen },
   { href: "/updates", label: "Updates", icon: Download },
@@ -34,6 +39,7 @@ const navItems = [
 ];
 
 const bottomItems = [
+  { href: "/settings/notifications", label: "Notifications", icon: Bell },
   { href: "/style-guide", label: "Settings", icon: Settings },
 ];
 

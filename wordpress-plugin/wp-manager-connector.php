@@ -391,6 +391,7 @@ class WP_Manager_Connector {
                                    name="wp_manager_secret"
                                    value="<?php echo esc_attr($secret); ?>"
                                    class="regular-text"
+                                   autocomplete="new-password"
                                    placeholder="Enter a secure secret key" />
                             <p class="description">
                                 This key must match the one you enter in your WP Manager dashboard when adding this site.

@@ -167,6 +167,14 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
   users: many(wpUsers),
   activities: many(activityLog),
   updateLogs: many(updateLog),
+  tags: many(siteTags),
+  backups: many(backups),
+  securityScans: many(securityScans),
+  uptimeChecks: many(uptimeChecks),
+  uptimeIncidents: many(uptimeIncidents),
+  performanceMetrics: many(performanceMetrics),
+  userPermissions: many(userSitePermissions),
+  clientAccess: many(clientSiteAccess),
 }));
 
 export const pluginsRelations = relations(plugins, ({ one }) => ({
@@ -204,6 +212,234 @@ export const updateLogRelations = relations(updateLog, ({ one }) => ({
   }),
 }));
 
+// Tags for categorizing sites
+export const tags = sqliteTable("tags", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull().unique(),
+  color: text("color").default("#3b82f6"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Junction table for site tags (many-to-many)
+export const siteTags = sqliteTable("site_tags", {
+  siteId: integer("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  tagId: integer("tag_id").notNull().references(() => tags.id, { onDelete: "cascade" }),
+});
+
+// Notification settings
+export const notificationSettings = sqliteTable("notification_settings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  type: text("type", { enum: ["email", "slack", "discord", "webhook"] }).notNull(),
+  enabled: integer("enabled", { mode: "boolean" }).default(true),
+  config: text("config"), // JSON config (email addresses, webhook URLs, etc.)
+  events: text("events"), // JSON array of events to notify on
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Notification history
+export const notificationHistory = sqliteTable("notification_history", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  settingId: integer("setting_id").references(() => notificationSettings.id, { onDelete: "cascade" }),
+  siteId: integer("site_id").references(() => sites.id, { onDelete: "cascade" }),
+  event: text("event").notNull(),
+  message: text("message").notNull(),
+  status: text("status", { enum: ["sent", "failed"] }).default("sent"),
+  errorMessage: text("error_message"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Scheduled jobs configuration
+export const scheduledJobs = sqliteTable("scheduled_jobs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull().unique(),
+  type: text("type", { enum: ["sync_all", "sync_site", "health_check", "backup"] }).notNull(),
+  schedule: text("schedule").notNull(), // Cron expression
+  enabled: integer("enabled", { mode: "boolean" }).default(true),
+  siteId: integer("site_id").references(() => sites.id, { onDelete: "cascade" }),
+  lastRun: text("last_run"),
+  nextRun: text("next_run"),
+  config: text("config"), // JSON config
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Backup tracking
+export const backups = sqliteTable("backups", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  siteId: integer("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  type: text("type", { enum: ["manual", "scheduled", "pre_update"] }).notNull(),
+  status: text("status", { enum: ["pending", "in_progress", "completed", "failed"] }).default("pending"),
+  size: integer("size"), // Bytes
+  location: text("location"), // Storage location (S3, local, etc.)
+  fileCount: integer("file_count"),
+  dbSize: integer("db_size"),
+  errorMessage: text("error_message"),
+  completedAt: text("completed_at"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Security scan results
+export const securityScans = sqliteTable("security_scans", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  siteId: integer("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  scanType: text("scan_type", { enum: ["vulnerability", "malware", "ssl", "firewall"] }).notNull(),
+  status: text("status", { enum: ["pending", "running", "completed", "failed"] }).default("pending"),
+  score: integer("score"), // 0-100 security score
+  issues: text("issues"), // JSON array of found issues
+  recommendations: text("recommendations"), // JSON array
+  completedAt: text("completed_at"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Uptime monitoring checks
+export const uptimeChecks = sqliteTable("uptime_checks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  siteId: integer("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  status: text("status", { enum: ["up", "down", "degraded"] }).notNull(),
+  responseTime: integer("response_time"), // Milliseconds
+  statusCode: integer("status_code"),
+  errorMessage: text("error_message"),
+  checkedAt: text("checked_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Uptime incidents
+export const uptimeIncidents = sqliteTable("uptime_incidents", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  siteId: integer("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  startedAt: text("started_at").notNull(),
+  resolvedAt: text("resolved_at"),
+  duration: integer("duration"), // Seconds
+  status: text("status", { enum: ["ongoing", "resolved"] }).default("ongoing"),
+  notificationSent: integer("notification_sent", { mode: "boolean" }).default(false),
+  notes: text("notes"),
+});
+
+// Performance metrics
+export const performanceMetrics = sqliteTable("performance_metrics", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  siteId: integer("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  pageLoadTime: integer("page_load_time"), // Milliseconds
+  ttfb: integer("ttfb"), // Time to first byte (ms)
+  domContentLoaded: integer("dom_content_loaded"), // Milliseconds
+  firstContentfulPaint: integer("first_contentful_paint"), // Milliseconds
+  largestContentfulPaint: integer("largest_contentful_paint"), // Milliseconds
+  cumulativeLayoutShift: text("cumulative_layout_shift"), // Float as string
+  performanceScore: integer("performance_score"), // 0-100
+  checkedAt: text("checked_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Team users (for multi-user support)
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  role: text("role", { enum: ["admin", "editor", "viewer"] }).default("viewer"),
+  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  lastLogin: text("last_login"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// User site permissions (which users can access which sites)
+export const userSitePermissions = sqliteTable("user_site_permissions", {
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  siteId: integer("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  permission: text("permission", { enum: ["view", "edit", "admin"] }).default("view"),
+});
+
+// White label settings
+export const whiteLabelSettings = sqliteTable("white_label_settings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  organizationName: text("organization_name"),
+  logoUrl: text("logo_url"),
+  faviconUrl: text("favicon_url"),
+  primaryColor: text("primary_color").default("#6366f1"),
+  secondaryColor: text("secondary_color").default("#8b5cf6"),
+  customDomain: text("custom_domain"),
+  supportEmail: text("support_email"),
+  supportUrl: text("support_url"),
+  footerText: text("footer_text"),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Client portal users (read-only access for clients)
+export const clientUsers = sqliteTable("client_users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  organizationName: text("organization_name"),
+  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  lastLogin: text("last_login"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Client user site access
+export const clientSiteAccess = sqliteTable("client_site_access", {
+  clientUserId: integer("client_user_id").notNull().references(() => clientUsers.id, { onDelete: "cascade" }),
+  siteId: integer("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+});
+
+// Relations for new tables
+export const tagsRelations = relations(tags, ({ many }) => ({
+  siteTags: many(siteTags),
+}));
+
+export const siteTagsRelations = relations(siteTags, ({ one }) => ({
+  site: one(sites, {
+    fields: [siteTags.siteId],
+    references: [sites.id],
+  }),
+  tag: one(tags, {
+    fields: [siteTags.tagId],
+    references: [tags.id],
+  }),
+}));
+
+export const backupsRelations = relations(backups, ({ one }) => ({
+  site: one(sites, {
+    fields: [backups.siteId],
+    references: [sites.id],
+  }),
+}));
+
+export const securityScansRelations = relations(securityScans, ({ one }) => ({
+  site: one(sites, {
+    fields: [securityScans.siteId],
+    references: [sites.id],
+  }),
+}));
+
+export const uptimeChecksRelations = relations(uptimeChecks, ({ one }) => ({
+  site: one(sites, {
+    fields: [uptimeChecks.siteId],
+    references: [sites.id],
+  }),
+}));
+
+export const uptimeIncidentsRelations = relations(uptimeIncidents, ({ one }) => ({
+  site: one(sites, {
+    fields: [uptimeIncidents.siteId],
+    references: [sites.id],
+  }),
+}));
+
+export const performanceMetricsRelations = relations(performanceMetrics, ({ one }) => ({
+  site: one(sites, {
+    fields: [performanceMetrics.siteId],
+    references: [sites.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  sitePermissions: many(userSitePermissions),
+}));
+
+export const clientUsersRelations = relations(clientUsers, ({ many }) => ({
+  siteAccess: many(clientSiteAccess),
+}));
+
 // Type exports
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
@@ -219,3 +455,21 @@ export type WpUser = typeof wpUsers.$inferSelect;
 export type ActivityLogEntry = typeof activityLog.$inferSelect;
 export type UpdateLogEntry = typeof updateLog.$inferSelect;
 export type NewUpdateLogEntry = typeof updateLog.$inferInsert;
+export type Tag = typeof tags.$inferSelect;
+export type NewTag = typeof tags.$inferInsert;
+export type NotificationSetting = typeof notificationSettings.$inferSelect;
+export type NewNotificationSetting = typeof notificationSettings.$inferInsert;
+export type ScheduledJob = typeof scheduledJobs.$inferSelect;
+export type NewScheduledJob = typeof scheduledJobs.$inferInsert;
+export type Backup = typeof backups.$inferSelect;
+export type NewBackup = typeof backups.$inferInsert;
+export type SecurityScan = typeof securityScans.$inferSelect;
+export type NewSecurityScan = typeof securityScans.$inferInsert;
+export type UptimeCheck = typeof uptimeChecks.$inferSelect;
+export type UptimeIncident = typeof uptimeIncidents.$inferSelect;
+export type PerformanceMetric = typeof performanceMetrics.$inferSelect;
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type ClientUser = typeof clientUsers.$inferSelect;
+export type NewClientUser = typeof clientUsers.$inferInsert;
+export type WhiteLabelSettings = typeof whiteLabelSettings.$inferSelect;

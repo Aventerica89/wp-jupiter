@@ -4,8 +4,39 @@ import { ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
-  return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />
+interface BreadcrumbItemData {
+  label: string
+  href?: string
+}
+
+interface BreadcrumbProps extends React.ComponentProps<"nav"> {
+  items?: BreadcrumbItemData[]
+}
+
+function Breadcrumb({ items, children, ...props }: BreadcrumbProps) {
+  // If items prop is provided, render using the simple items-based API
+  if (items) {
+    return (
+      <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props}>
+        <BreadcrumbList>
+          {items.map((item, index) => (
+            <React.Fragment key={index}>
+              <BreadcrumbItem>
+                {item.href ? (
+                  <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+                ) : (
+                  <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                )}
+              </BreadcrumbItem>
+              {index < items.length - 1 && <BreadcrumbSeparator />}
+            </React.Fragment>
+          ))}
+        </BreadcrumbList>
+      </nav>
+    )
+  }
+  // Otherwise, render children for compositional API
+  return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props}>{children}</nav>
 }
 
 function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {

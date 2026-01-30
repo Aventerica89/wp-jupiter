@@ -20,49 +20,58 @@ A self-hosted WordPress site management dashboard. Monitor and manage multiple W
 
 ## Getting Started
 
+### Prerequisites
+
+- Node.js 18+
+- [1Password CLI](https://developer.1password.com/docs/cli/get-started/) (for secure credential management)
+- [Turso CLI](https://docs.turso.tech/cli/introduction)
+
 ### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Set up Turso database
+### 2. Set up environment variables
+
+**Recommended: Using 1Password (Team Setup)**
+
+This project uses 1Password for secure credential management. All secrets are stored in 1Password and injected at runtime.
 
 ```bash
-# Install Turso CLI
-curl -sSfL https://get.tur.so/install.sh | bash
-
-# Login and create database
-turso auth login
-turso db create wp-manager
-
-# Get credentials
-turso db show wp-manager --url
-turso db tokens create wp-manager
+# Generate .env.local from 1Password (requires access to Business vault)
+npm run env:inject
 ```
 
-### 3. Configure environment
+**Alternative: Manual Setup (Development Only)**
 
-Copy `.env.example` to `.env.local`:
+If you don't have access to the team's 1Password vault:
 
 ```bash
+# Copy the example file
 cp .env.example .env.local
+
+# Generate secrets
+ENCRYPTION_SECRET=$(openssl rand -base64 32)
+AUTH_SECRET=$(openssl rand -base64 32)
+
+# Add to .env.local
+echo "ENCRYPTION_SECRET=$ENCRYPTION_SECRET" >> .env.local
+echo "AUTH_SECRET=$AUTH_SECRET" >> .env.local
+
+# Set up your own Turso database
+turso db create wp-manager-dev
+turso db show wp-manager-dev --url    # Add to .env.local
+turso db tokens create wp-manager-dev # Add to .env.local
 ```
 
-Add your Turso credentials:
-
-```
-TURSO_DATABASE_URL=libsql://your-db.turso.io
-TURSO_AUTH_TOKEN=your-token
-```
-
-### 4. Push database schema
+### 3. Push database schema
 
 ```bash
 npm run db:push
 ```
 
-### 5. Start development server
+### 4. Start development server
 
 ```bash
 npm run dev
@@ -76,18 +85,43 @@ Open [http://localhost:3000](http://localhost:3000) to view the dashboard.
 2. Create a new application password
 3. In WP Manager, click "Add Site" and enter the URL and credentials
 
+## Environment Variables
+
+Required:
+- `TURSO_DATABASE_URL` - Turso database connection URL
+- `TURSO_AUTH_TOKEN` - Turso authentication token
+- `ENCRYPTION_SECRET` - Secret for encrypting sensitive data (32+ characters)
+- `AUTH_SECRET` - Secret for session authentication (32+ characters)
+- `NEXT_PUBLIC_APP_URL` - Public URL of the application
+
+Optional:
+- `ADMIN_PASSWORD` - Enable basic auth protection
+- `RESEND_API_KEY` - For email notifications (future feature)
+
+See `.env.example` for details.
+
 ## Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
+- `npm run env:inject` - Generate .env.local from 1Password
 - `npm run db:push` - Push schema to database
 - `npm run db:studio` - Open Drizzle Studio
+- `npm run test` - Run tests
+- `npm run test:coverage` - Run tests with coverage
 
 ## Deploy on Vercel
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 
-Add your `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` as environment variables.
+Environment variables are automatically deployed from 1Password to Vercel for team members with access.
+
+If setting up a new deployment, ensure these environment variables are set:
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+- `ENCRYPTION_SECRET`
+- `AUTH_SECRET`
+- `NEXT_PUBLIC_APP_URL`
 
 ## License
 

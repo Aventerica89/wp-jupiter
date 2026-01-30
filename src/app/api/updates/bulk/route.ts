@@ -165,35 +165,40 @@ export async function POST(request: NextRequest) {
                 wp.getThemes(),
               ]);
 
-              // Update plugin states from WordPress
-              for (const p of freshPlugins) {
-                await db
-                  .update(plugins)
-                  .set({
-                    version: p.version,
-                    updateAvailable: !!p.update,
-                    newVersion: p.update?.version || null,
-                    isActive: p.status === "active",
-                  })
-                  .where(
-                    and(eq(plugins.siteId, siteId), eq(plugins.slug, p.plugin))
-                  );
-              }
-
-              // Update theme states from WordPress
-              for (const t of freshThemes) {
-                await db
-                  .update(themes)
-                  .set({
-                    version: t.version,
-                    updateAvailable: !!t.update,
-                    newVersion: t.update?.version || null,
-                    isActive: t.status === "active",
-                  })
-                  .where(
-                    and(eq(themes.siteId, siteId), eq(themes.slug, t.stylesheet))
-                  );
-              }
+              // Update plugin and theme states in parallel within a transaction
+              // Transaction ensures atomicity - all updates succeed or fail together
+              await db.transaction(async (tx) => {
+                await Promise.all([
+                  // Update all plugin states
+                  ...freshPlugins.map((p) =>
+                    tx
+                      .update(plugins)
+                      .set({
+                        version: p.version,
+                        updateAvailable: !!p.update,
+                        newVersion: p.update?.version || null,
+                        isActive: p.status === "active",
+                      })
+                      .where(
+                        and(eq(plugins.siteId, siteId), eq(plugins.slug, p.plugin))
+                      )
+                  ),
+                  // Update all theme states
+                  ...freshThemes.map((t) =>
+                    tx
+                      .update(themes)
+                      .set({
+                        version: t.version,
+                        updateAvailable: !!t.update,
+                        newVersion: t.update?.version || null,
+                        isActive: t.status === "active",
+                      })
+                      .where(
+                        and(eq(themes.siteId, siteId), eq(themes.slug, t.stylesheet))
+                      )
+                  ),
+                ]);
+              });
             } catch (syncError) {
               console.error(`Re-sync failed for site ${siteId}:`, syncError);
               // Don't fail the whole operation, just log the sync error

@@ -14,7 +14,11 @@ import {
   XCircle,
   ArrowRight,
   TrendingUp,
+  Zap,
+  Activity,
+  Clock,
 } from "lucide-react";
+import { Skeleton, SkeletonCard, SkeletonChart } from "@/components/ui/skeleton";
 import {
   PieChart,
   Pie,
@@ -72,8 +76,19 @@ const CHART_COLORS = {
   themes: "#a855f7",
 };
 
+interface ActivityLog {
+  id: number;
+  siteId: number | null;
+  siteName: string | null;
+  action: string;
+  status: string;
+  details: string | null;
+  createdAt: string;
+}
+
 export default function DashboardPage() {
   const [sites, setSites] = useState<SiteWithHealth[]>([]);
+  const [activity, setActivity] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
 
@@ -90,12 +105,23 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchActivity = async () => {
+    try {
+      const res = await fetch("/api/activity?limit=5");
+      const data = await res.json();
+      setActivity(data.logs || []);
+    } catch (error) {
+      console.error("Failed to fetch activity:", error);
+    }
+  };
+
   const syncAllSites = async () => {
     setSyncing(true);
     toast.loading("Syncing all sites...", { id: "sync" });
     try {
       await fetch("/api/sync", { method: "POST" });
       await fetchSites();
+      await fetchActivity();
       toast.success("All sites synced", { id: "sync" });
     } catch (error) {
       console.error("Sync failed:", error);
@@ -107,6 +133,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchSites();
+    fetchActivity();
   }, []);
 
   // Use TDD utility for calculations
@@ -169,7 +196,53 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="p-8">
-        <p className="text-muted-foreground">Loading...</p>
+        {/* Header Skeleton */}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-32 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <div className="flex gap-3">
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-20" />
+          </div>
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+
+        {/* Charts Skeleton */}
+        <div className="mb-8 grid gap-4 lg:grid-cols-3">
+          <SkeletonChart />
+          <SkeletonChart />
+          <SkeletonChart />
+        </div>
+
+        {/* Recent Sites Skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <Skeleton className="h-10 w-10 rounded-lg" />
+                  <div className="flex-1">
+                    <Skeleton className="h-4 w-32 mb-2" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -223,6 +296,106 @@ export default function DashboardPage() {
           icon={AlertCircle}
           iconColor="text-amber-500"
         />
+      </div>
+
+      {/* Quick Actions & Recent Activity */}
+      <div className="mb-8 grid gap-4 lg:grid-cols-2">
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-amber-500" />
+              <CardTitle>Quick Actions</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex-col gap-2 justify-start"
+                onClick={syncAllSites}
+                disabled={syncing}
+              >
+                <RefreshCw className={`h-5 w-5 ${syncing ? "animate-spin" : ""}`} />
+                <span>Sync All Sites</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex-col gap-2 justify-start"
+                asChild
+              >
+                <Link href="/updates">
+                  <AlertCircle className="h-5 w-5" />
+                  <span>View Updates ({counts.totalUpdates})</span>
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex-col gap-2 justify-start"
+                asChild
+              >
+                <Link href="/sites/new">
+                  <Globe className="h-5 w-5" />
+                  <span>Add New Site</span>
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-auto py-4 flex-col gap-2 justify-start"
+                asChild
+              >
+                <Link href="/monitoring">
+                  <Activity className="h-5 w-5" />
+                  <span>View Monitoring</span>
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-blue-500" />
+              <CardTitle>Recent Activity</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {activity.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-sm text-muted-foreground">No recent activity</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activity.map((log) => (
+                  <div key={log.id} className="flex items-start gap-3 text-sm">
+                    <div
+                      className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${
+                        log.status === "success"
+                          ? "bg-green-500"
+                          : log.status === "failed"
+                            ? "bg-red-500"
+                            : "bg-blue-500"
+                      }`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-foreground truncate">
+                        {log.action}
+                        {log.siteName && (
+                          <span className="text-muted-foreground"> - {log.siteName}</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatRelativeTime(log.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Charts Row */}

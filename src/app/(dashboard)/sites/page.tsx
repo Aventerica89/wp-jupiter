@@ -34,6 +34,7 @@ import {
   ArchiveRestore,
 } from "lucide-react";
 import { calculateUpdateCounts, type Site } from "@/lib/site-utils";
+import { Skeleton, SkeletonCard, SkeletonSiteCard } from "@/components/ui/skeleton";
 
 interface SiteWithTags extends Site {
   tags?: Array<{ id: number; name: string; color: string }>;
@@ -237,7 +238,42 @@ export default function SitesPage() {
   if (loading) {
     return (
       <div className="p-8">
-        <p className="text-muted-foreground">Loading...</p>
+        {/* Header Skeleton */}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-24 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <div className="flex gap-3">
+            <Skeleton className="h-10 w-28" />
+            <Skeleton className="h-10 w-24" />
+          </div>
+        </div>
+
+        {/* Search/Filter Skeleton */}
+        <div className="mb-6 flex gap-4">
+          <Skeleton className="h-10 flex-1 max-w-sm" />
+          <Skeleton className="h-10 w-32" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+
+        {/* Sites Grid Skeleton */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <SkeletonSiteCard />
+          <SkeletonSiteCard />
+          <SkeletonSiteCard />
+          <SkeletonSiteCard />
+          <SkeletonSiteCard />
+          <SkeletonSiteCard />
+        </div>
       </div>
     );
   }
@@ -252,29 +288,30 @@ export default function SitesPage() {
             Manage your WordPress sites
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" className="hidden sm:flex" asChild>
             <Link href="/tags">
               <TagIcon className="mr-2 h-4 w-4" />
               Manage Tags
             </Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button variant="outline" size="sm" className="hidden sm:flex" asChild>
             <Link href="/sites/archived">
               <Archive className="mr-2 h-4 w-4" />
               Archived
             </Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button variant="outline" size="sm" className="hidden md:flex" asChild>
             <a href="/api/sites/export?format=csv" download>
               <FileDown className="mr-2 h-4 w-4" />
               Export
             </a>
           </Button>
-          <Button asChild>
+          <Button size="sm" asChild>
             <Link href="/sites/new">
               <Plus className="mr-2 h-4 w-4" />
-              Add Site
+              <span className="hidden sm:inline">Add Site</span>
+              <span className="sm:hidden">Add</span>
             </Link>
           </Button>
         </div>
@@ -339,46 +376,50 @@ export default function SitesPage() {
       {selectedSites.length > 0 && (
         <Card className="mb-6 border-blue-200 bg-blue-50">
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
               <div className="flex items-center gap-3">
-                <span className="font-medium text-blue-900">
+                <span className="font-medium text-blue-900 text-sm sm:text-base">
                   {selectedSites.length} site{selectedSites.length !== 1 ? "s" : ""} selected
                 </span>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={toggleSelectAll}
+                  className="text-xs sm:text-sm"
                 >
-                  {selectedSites.length === filteredSites.length ? "Deselect All" : "Select All"}
+                  {selectedSites.length === filteredSites.length ? "Deselect" : "Select All"}
                 </Button>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => executeBulkAction("sync")}
                   disabled={bulkActionLoading}
+                  title="Sync selected sites"
                 >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Sync
+                  <RefreshCw className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Sync</span>
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => executeBulkAction("favorite")}
                   disabled={bulkActionLoading}
+                  title="Favorite selected sites"
                 >
-                  <Star className="mr-2 h-4 w-4" />
-                  Favorite
+                  <Star className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Favorite</span>
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => executeBulkAction("archive")}
                   disabled={bulkActionLoading}
+                  title="Archive selected sites"
                 >
-                  <Archive className="mr-2 h-4 w-4" />
-                  Archive
+                  <Archive className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Archive</span>
                 </Button>
                 <Button
                   size="sm"
@@ -388,9 +429,11 @@ export default function SitesPage() {
                     if (tagId) executeBulkAction("addTag", { tagId: parseInt(tagId) });
                   }}
                   disabled={bulkActionLoading}
+                  title="Add tag to selected sites"
+                  className="hidden md:flex"
                 >
-                  <TagIcon className="mr-2 h-4 w-4" />
-                  Add Tag
+                  <TagIcon className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Add Tag</span>
                 </Button>
                 <Button
                   size="sm"
@@ -401,8 +444,9 @@ export default function SitesPage() {
                     }
                   }}
                   disabled={bulkActionLoading}
+                  title="Delete selected sites"
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="h-4 w-4 sm:mr-2" />
                   Delete
                 </Button>
               </div>
@@ -442,13 +486,40 @@ export default function SitesPage() {
       {/* Sites Grid */}
       {filteredSites.length === 0 ? (
         <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">
-              {sites.length === 0 ? "No sites added yet." : "No sites match your filters."}
+          <CardContent className="py-16 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
+              {sites.length === 0 ? (
+                <Globe className="h-8 w-8 text-slate-400" />
+              ) : (
+                <Search className="h-8 w-8 text-slate-400" />
+              )}
+            </div>
+            <h3 className="text-lg font-medium mb-2">
+              {sites.length === 0 ? "No sites yet" : "No matching sites"}
+            </h3>
+            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+              {sites.length === 0
+                ? "Add your first WordPress site to start monitoring and managing it from one place."
+                : "Try adjusting your search or filter criteria to find what you're looking for."}
             </p>
-            {sites.length === 0 && (
-              <Button asChild className="mt-4">
-                <Link href="/sites/new">Add Your First Site</Link>
+            {sites.length === 0 ? (
+              <Button asChild>
+                <Link href="/sites/new">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Your First Site
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("all");
+                  setTagFilter("all");
+                }}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Clear Filters
               </Button>
             )}
           </CardContent>

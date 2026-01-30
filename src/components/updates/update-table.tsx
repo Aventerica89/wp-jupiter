@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Palette } from "lucide-react";
+import { Package, Palette, CheckCircle2 } from "lucide-react";
 
 interface PendingUpdate {
   id: string;
@@ -224,8 +224,14 @@ export function UpdateTable({
         })}
 
         {filteredUpdates.length === 0 && (
-          <div className="px-4 py-8 text-center text-slate-500">
-            No updates available
+          <div className="px-4 py-12 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+              <CheckCircle2 className="h-6 w-6 text-green-600" />
+            </div>
+            <h3 className="font-medium text-slate-900">All up to date!</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Your plugins and themes are all running the latest versions.
+            </p>
           </div>
         )}
       </div>

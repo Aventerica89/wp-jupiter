@@ -12,7 +12,9 @@ import {
   Download,
   Globe,
   AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
+import { Skeleton, SkeletonCard, SkeletonTable } from "@/components/ui/skeleton";
 
 interface PendingUpdate {
   id: string;
@@ -102,10 +104,35 @@ export default function UpdatesPage() {
   if (loading) {
     return (
       <div className="p-8">
-        <div className="flex items-center gap-2">
-          <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
-          <span className="text-muted-foreground">Loading updates...</span>
+        {/* Header Skeleton */}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-32 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <div className="flex gap-3">
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-32" />
+          </div>
         </div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+
+        {/* Table Skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+          </CardHeader>
+          <CardContent>
+            <SkeletonTable rows={8} />
+          </CardContent>
+        </Card>
       </div>
     );
   }

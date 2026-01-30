@@ -52,14 +52,13 @@ function SkeletonSiteCard() {
   )
 }
 
-function SkeletonTable() {
+function SkeletonTable({ rows = 4 }: { rows?: number }) {
   return (
     <div className="rounded-lg border bg-card">
       <div className="p-6 space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
+        {Array.from({ length: rows }).map((_, i) => (
+          <Skeleton key={i} className="h-10 w-full" />
+        ))}
       </div>
     </div>
   )

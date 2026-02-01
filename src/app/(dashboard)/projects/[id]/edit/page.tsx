@@ -7,7 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FolderOpen, Trash2, Check } from "lucide-react";
-import { Breadcrumb } from "@/components/ui/breadcrumb";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 const PROJECT_COLORS = [
   "#6366f1", // Indigo
@@ -127,13 +134,21 @@ export default function EditProjectPage({
 
   return (
     <div className="p-8">
-      <Breadcrumb
-        items={[
-          { label: "Projects", href: "/projects" },
-          { label: project.name, href: `/projects/${id}` },
-          { label: "Edit" },
-        ]}
-      />
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/projects">Projects</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/projects/${id}`}>{project.name}</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Edit</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Edit Project</h1>

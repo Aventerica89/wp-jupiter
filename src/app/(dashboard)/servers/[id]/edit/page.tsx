@@ -13,7 +13,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Server, ExternalLink, FileText, HelpCircle, Users, Trash2 } from "lucide-react";
-import { Breadcrumb } from "@/components/ui/breadcrumb";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 interface Provider {
   id: number;
@@ -163,13 +170,21 @@ export default function EditServerPage({
 
   return (
     <div className="p-8">
-      <Breadcrumb
-        items={[
-          { label: "Servers", href: "/servers" },
-          { label: server.name, href: `/servers/${id}` },
-          { label: "Edit" },
-        ]}
-      />
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/servers">Servers</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/servers/${id}`}>{server.name}</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Edit</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       {/* Header */}
       <div className="mb-8">

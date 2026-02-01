@@ -12,7 +12,12 @@ import {
   Database,
   ChevronRight,
 } from "lucide-react";
-import { Breadcrumb } from "@/components/ui/breadcrumb";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
 
 interface SettingsSection {
   title: string;
@@ -76,7 +81,13 @@ const settingsSections: SettingsSection[] = [
 export default function SettingsPage() {
   return (
     <div className="p-8">
-      <Breadcrumb items={[{ label: "Settings" }]} />
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbPage>Settings</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>

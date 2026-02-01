@@ -19,7 +19,14 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
-import { Breadcrumb } from "@/components/ui/breadcrumb";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 interface Site {
   id: number;
@@ -101,12 +108,17 @@ export default function ServerDetailPage() {
 
   return (
     <div className="p-8">
-      <Breadcrumb
-        items={[
-          { label: "Servers", href: "/servers" },
-          { label: server.name },
-        ]}
-      />
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/servers">Servers</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{server.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       {/* Header */}
       <div className="mb-8 flex items-start justify-between">

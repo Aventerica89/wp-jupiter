@@ -6,8 +6,16 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Save, Trash2, Settings } from "lucide-react";
+import { Save, Trash2, Settings, X, Plus } from "lucide-react";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+
+interface Tag {
+  id: number;
+  name: string;
+  color: string;
+}
 
 interface Site {
   id: number;
@@ -17,6 +25,7 @@ interface Site {
   serverId: number | null;
   projectId: number | null;
   notes: string | null;
+  tags?: Tag[];
 }
 
 interface ServerOption {
@@ -41,9 +50,12 @@ export default function EditSitePage({
   const [site, setSite] = useState<Site | null>(null);
   const [servers, setServers] = useState<ServerOption[]>([]);
   const [projects, setProjects] = useState<ProjectOption[]>([]);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [tagging, setTagging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState("");
@@ -57,24 +69,28 @@ export default function EditSitePage({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [siteRes, serversRes, projectsRes] = await Promise.all([
+        const [siteRes, serversRes, projectsRes, tagsRes] = await Promise.all([
           fetch(`/api/sites/${id}`),
           fetch("/api/servers"),
           fetch("/api/projects"),
+          fetch("/api/tags"),
         ]);
         const siteData = await siteRes.json();
         const serversData = await serversRes.json();
         const projectsData = await projectsRes.json();
+        const tagsData = await tagsRes.json();
 
         setSite(siteData);
         setServers(serversData);
         setProjects(projectsData);
+        setAllTags(tagsData);
         setName(siteData.name);
         setUrl(siteData.url);
         setApiUsername(siteData.apiUsername || "");
         setServerId(siteData.serverId || null);
         setProjectId(siteData.projectId || null);
         setNotes(siteData.notes || "");
+        setSelectedTags(siteData.tags || []);
       } catch (err) {
         setError("Failed to load site");
       } finally {
@@ -83,6 +99,48 @@ export default function EditSitePage({
     };
     fetchData();
   }, [id]);
+
+  const addTag = async (tag: Tag) => {
+    if (tagging) return;
+    setTagging(true);
+    try {
+      const res = await fetch(`/api/sites/${id}/tags`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tagId: tag.id }),
+      });
+      if (!res.ok) throw new Error("Failed to add tag");
+      setSelectedTags((prev) => [...prev, tag]);
+      toast.success(`Tag "${tag.name}" added`);
+    } catch (err) {
+      toast.error("Failed to add tag");
+    } finally {
+      setTagging(false);
+    }
+  };
+
+  const removeTag = async (tag: Tag) => {
+    if (tagging) return;
+    setTagging(true);
+    try {
+      const res = await fetch(`/api/sites/${id}/tags`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tagId: tag.id }),
+      });
+      if (!res.ok) throw new Error("Failed to remove tag");
+      setSelectedTags((prev) => prev.filter((t) => t.id !== tag.id));
+      toast.success(`Tag "${tag.name}" removed`);
+    } catch (err) {
+      toast.error("Failed to remove tag");
+    } finally {
+      setTagging(false);
+    }
+  };
+
+  const availableTags = allTags.filter(
+    (tag) => !selectedTags.some((st) => st.id === tag.id)
+  );
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,6 +215,14 @@ export default function EditSitePage({
 
   return (
     <div className="p-8">
+      <Breadcrumb
+        items={[
+          { label: "Sites", href: "/sites" },
+          { label: site.name, href: `/sites/${id}` },
+          { label: "Edit" },
+        ]}
+      />
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Edit Site</h1>
@@ -246,6 +312,59 @@ export default function EditSitePage({
                 </select>
                 <p className="text-xs text-muted-foreground">
                   Group this site with others in a project
+                </p>
+              </div>
+
+              {/* Tags Selection */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Tags</label>
+                <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-md border border-input bg-background">
+                  {selectedTags.map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      variant="secondary"
+                      className="flex items-center gap-1 pr-1"
+                      style={{ backgroundColor: tag.color + "20", color: tag.color, borderColor: tag.color }}
+                    >
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: tag.color }}
+                      />
+                      {tag.name}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        disabled={tagging}
+                        className="ml-1 rounded-full p-0.5 hover:bg-black/10 disabled:opacity-50"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                  {selectedTags.length === 0 && (
+                    <span className="text-sm text-muted-foreground">No tags assigned</span>
+                  )}
+                </div>
+                {availableTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <span className="text-xs text-muted-foreground mr-1">Add:</span>
+                    {availableTags.map((tag) => (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => addTag(tag)}
+                        disabled={tagging}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ borderColor: tag.color, color: tag.color }}
+                      >
+                        <Plus className="h-3 w-3" />
+                        {tag.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Tags are saved immediately when added or removed
                 </p>
               </div>
 

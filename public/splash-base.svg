@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" fill="none">
+  <defs>
+    <linearGradient id="splashBgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="50%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="390" height="844" fill="#0f172a"/>
+
+  <!-- Logo centered -->
+  <g transform="translate(147, 374)">
+    <!-- Background rounded square -->
+    <rect x="6" y="6" width="84" height="84" rx="18" fill="url(#splashBgGradient)"/>
+
+    <!-- Hub dots around center -->
+    <circle cx="48" cy="18" r="6" fill="white" opacity="0.8"/>
+    <circle cx="72" cy="36" r="4.5" fill="white" opacity="0.7"/>
+    <circle cx="72" cy="60" r="4.5" fill="white" opacity="0.7"/>
+    <circle cx="48" cy="78" r="6" fill="white" opacity="0.8"/>
+    <circle cx="24" cy="60" r="4.5" fill="white" opacity="0.7"/>
+    <circle cx="24" cy="36" r="4.5" fill="white" opacity="0.7"/>
+
+    <!-- Central hub with W -->
+    <rect x="30" y="30" width="36" height="36" rx="9" fill="white"/>
+    <path d="M37.5 39 L42 57 L48 45 L54 57 L58.5 39"
+          stroke="url(#splashBgGradient)"
+          stroke-width="4.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+  </g>
+
+  <!-- App name -->
+  <text x="195" y="500" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="600" fill="white">WP Manager</text>
+</svg>

@@ -39,7 +39,7 @@ export default function MobileAppPage() {
             Coming Soon
           </Badge>
           <h1 className="text-4xl font-bold tracking-tight mb-4">
-            WP Manager Mobile
+            WP Jupiter Mobile
           </h1>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
             Monitor and manage your WordPress sites on the go. Native apps for
@@ -63,7 +63,7 @@ export default function MobileAppPage() {
                   <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
                     <Smartphone className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-white font-semibold mb-2">WP Manager</h3>
+                  <h3 className="text-white font-semibold mb-2">WP Jupiter</h3>
                   <p className="text-slate-400 text-sm">
                     Mobile app in development
                   </p>

@@ -1,4 +1,4 @@
-# WP Manager
+# WP Jupiter
 
 A self-hosted WordPress site management dashboard. Monitor and manage multiple WordPress sites from a single interface.
 
@@ -60,9 +60,9 @@ echo "ENCRYPTION_SECRET=$ENCRYPTION_SECRET" >> .env.local
 echo "AUTH_SECRET=$AUTH_SECRET" >> .env.local
 
 # Set up your own Turso database
-turso db create wp-manager-dev
-turso db show wp-manager-dev --url    # Add to .env.local
-turso db tokens create wp-manager-dev # Add to .env.local
+turso db create wp-jupiter-dev
+turso db show wp-jupiter-dev --url    # Add to .env.local
+turso db tokens create wp-jupiter-dev # Add to .env.local
 ```
 
 ### 3. Push database schema
@@ -83,7 +83,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the dashboard.
 
 1. In your WordPress site, go to: **Users > Profile > Application Passwords**
 2. Create a new application password
-3. In WP Manager, click "Add Site" and enter the URL and credentials
+3. In WP Jupiter, click "Add Site" and enter the URL and credentials
 
 ## Environment Variables
 

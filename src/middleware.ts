@@ -12,7 +12,7 @@ const SECRET_KEY = new TextEncoder().encode(
   rawSecret || "dev-only-fallback-secret-not-for-production"
 );
 
-const SESSION_COOKIE = "wp-manager-session";
+const SESSION_COOKIE = "wp-jupiter-session";
 
 // Public paths that don't require authentication
 const PUBLIC_PATHS = [

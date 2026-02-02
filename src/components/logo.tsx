@@ -60,7 +60,7 @@ export function Logo({ className, showText = true, textClassName }: LogoProps) {
       <LogoIcon />
       {showText && (
         <span className={cn("text-lg font-semibold text-white", textClassName)}>
-          WP Manager
+          WP Jupiter
         </span>
       )}
     </div>

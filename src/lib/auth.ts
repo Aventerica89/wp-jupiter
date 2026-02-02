@@ -12,7 +12,7 @@ const SECRET_KEY = new TextEncoder().encode(
   rawSecret || "dev-only-fallback-secret-not-for-production"
 );
 
-const SESSION_COOKIE = "wp-manager-session";
+const SESSION_COOKIE = "wp-jupiter-session";
 const SESSION_DURATION = 60 * 60 * 24 * 7; // 7 days in seconds
 
 export interface SessionPayload {

@@ -1,12 +1,12 @@
-# WP Manager - WordPress Site Dashboard
+# WP Jupiter - WordPress Site Dashboard
 
 A self-hosted WordPress site management dashboard, similar to MainWP but lightweight and built with modern tech.
 
 ## Documentation
 
 - Sync to docs.jbcloud.app: Yes
-- Project slug: wp-manager
-- Docs URL: https://docs.jbcloud.app/wp-manager/
+- Project slug: wp-jupiter
+- Docs URL: https://docs.jbcloud.app/wp-jupiter/
 
 ## Tech Stack
 
@@ -57,11 +57,11 @@ curl -sSfL https://get.tur.so/install.sh | bash
 turso auth login
 
 # Create database
-turso db create wp-manager
+turso db create wp-jupiter
 
 # Get credentials
-turso db show wp-manager --url
-turso db tokens create wp-manager
+turso db show wp-jupiter --url
+turso db tokens create wp-jupiter
 ```
 
 ### 2. Configure environment
@@ -100,22 +100,22 @@ npm run dev
 1. Go to your WordPress site
 2. Navigate to: Users → Profile → Application Passwords
 3. Create a new application password
-4. Add the site in WP Manager with the URL and credentials
+4. Add the site in WP Jupiter with the URL and credentials
 
-### Option 2: WP Manager Connector Plugin (Recommended)
+### Option 2: WP Jupiter Connector Plugin (Recommended)
 
 Some hosts (like xCloud.host) or security plugins block the standard WordPress REST API. Use the connector plugin instead:
 
-1. Download `wordpress-plugin/wp-manager-connector.php` from this repo
+1. Download `wordpress-plugin/wp-jupiter-connector.php` from this repo
 2. Upload it to your WordPress site via Plugins → Add New → Upload Plugin
 3. Activate the plugin
-4. Go to Settings → WP Manager and set a secret key
-5. In WP Manager, add your site using:
+4. Go to Settings → WP Jupiter and set a secret key
+5. In WP Jupiter, add your site using:
    - **URL**: Your WordPress site URL
    - **Username**: (anything - it's ignored)
    - **Password**: The secret key you set in step 4
 
-WP Manager will automatically detect the connector plugin and use it for syncing.
+WP Jupiter will automatically detect the connector plugin and use it for syncing.
 
 ## API Endpoints
 
@@ -136,7 +136,7 @@ WP Manager will automatically detect the connector plugin and use it for syncing
 - [x] Plugin/theme listing with update status
 - [x] Health checks (online/offline status)
 - [x] Bulk sync functionality
-- [x] WP Manager Connector plugin for restricted hosts
+- [x] WP Jupiter Connector plugin for restricted hosts
 
 ## Phase 2 (Core Features) - Complete
 

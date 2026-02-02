@@ -68,7 +68,7 @@ export default function StyleGuidePage() {
         <div className="mb-16">
           <h1 className="text-4xl font-bold tracking-tight">Style Guide</h1>
           <p className="text-muted-foreground mt-2 text-lg">
-            UI components built with shadcn/ui for WP Manager
+            UI components built with shadcn/ui for WP Jupiter
           </p>
         </div>
 

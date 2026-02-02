@@ -12,13 +12,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "WP Manager",
+  title: "WP Jupiter",
   description: "Manage all your WordPress sites from one dashboard",
-  applicationName: "WP Manager",
+  applicationName: "WP Jupiter",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "WP Manager",
+    title: "WP Jupiter",
     startupImage: [
       {
         url: "/splash-1170x2532.png",

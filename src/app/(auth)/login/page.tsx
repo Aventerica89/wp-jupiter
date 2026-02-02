@@ -68,7 +68,7 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900">
             <Globe className="h-6 w-6 text-white" />
           </div>
-          <CardTitle className="text-2xl">WP Manager</CardTitle>
+          <CardTitle className="text-2xl">WP Jupiter</CardTitle>
           <CardDescription>
             Enter your password to access the dashboard
           </CardDescription>

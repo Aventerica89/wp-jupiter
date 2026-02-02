@@ -409,7 +409,7 @@ export default function EditSitePage({
                   placeholder="Leave blank to keep current"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Application Password or WP Manager Connector secret key. Leave
+                  Application Password or WP Jupiter Connector secret key. Leave
                   blank to keep the current value.
                 </p>
               </div>

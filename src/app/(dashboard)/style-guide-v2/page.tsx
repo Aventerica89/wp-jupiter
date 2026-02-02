@@ -625,7 +625,7 @@ export default function StyleGuideV2Page() {
         {/* Footer */}
         <div className="mt-20 pt-8 border-t border-slate-800">
           <p className="text-center text-slate-500 text-sm">
-            WP Manager Design System V2 - Purple Gradient Theme
+            WP Jupiter Design System V2 - Purple Gradient Theme
           </p>
         </div>
       </div>

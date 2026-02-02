@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name: WP Manager Connector
- * Plugin URI: https://github.com/Aventerica89/jb-cloud-wp-manager
- * Description: Connects your WordPress site to WP Manager dashboard for centralized management.
+ * Plugin Name: WP Jupiter Connector
+ * Plugin URI: https://github.com/Aventerica89/wp-jupiter
+ * Description: Connects your WordPress site to WP Jupiter dashboard for centralized management.
  * Version: 1.1.0
- * Author: WP Manager
+ * Author: WP Jupiter
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  */
@@ -86,7 +86,7 @@ class WP_Manager_Connector {
         if (empty($secret)) {
             return new WP_Error(
                 'not_configured',
-                'WP Manager Connector is not configured. Please set the secret key in Settings > WP Manager.',
+                'WP Jupiter Connector is not configured. Please set the secret key in Settings > WP Jupiter.',
                 array('status' => 403)
             );
         }
@@ -349,10 +349,10 @@ class WP_Manager_Connector {
      */
     public function add_settings_page() {
         add_options_page(
-            'WP Manager Connector',
-            'WP Manager',
+            'WP Jupiter Connector',
+            'WP Jupiter',
             'manage_options',
-            'wp-manager-connector',
+            'wp-jupiter-connector',
             array($this, 'render_settings_page')
         );
     }
@@ -375,7 +375,7 @@ class WP_Manager_Connector {
         $site_url = home_url();
         ?>
         <div class="wrap">
-            <h1>WP Manager Connector</h1>
+            <h1>WP Jupiter Connector</h1>
 
             <form method="post" action="options.php">
                 <?php settings_fields('wp_manager_settings'); ?>
@@ -386,15 +386,14 @@ class WP_Manager_Connector {
                             <label for="wp_manager_secret">Secret Key</label>
                         </th>
                         <td>
-                            <input type="password"
+                            <input type="text"
                                    id="wp_manager_secret"
                                    name="wp_manager_secret"
                                    value="<?php echo esc_attr($secret); ?>"
                                    class="regular-text"
-                                   autocomplete="new-password"
                                    placeholder="Enter a secure secret key" />
                             <p class="description">
-                                This key must match the one you enter in your WP Manager dashboard when adding this site.
+                                This key must match the one you enter in your WP Jupiter dashboard when adding this site.
                             </p>
                             <?php if (empty($secret)): ?>
                                 <p class="description" style="color: #d63638;">
@@ -433,7 +432,7 @@ class WP_Manager_Connector {
             <h3>How to Connect</h3>
             <ol>
                 <li>Set a secure secret key above and save</li>
-                <li>In your WP Manager dashboard, add this site with:
+                <li>In your WP Jupiter dashboard, add this site with:
                     <ul>
                         <li><strong>URL:</strong> <?php echo esc_html($site_url); ?></li>
                         <li><strong>Secret Key:</strong> (the key you set above)</li>

@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json(jsonData, {
         headers: {
-          "Content-Disposition": `attachment; filename="wp-manager-sites-${new Date().toISOString().split("T")[0]}.json"`,
+          "Content-Disposition": `attachment; filename="wp-jupiter-sites-${new Date().toISOString().split("T")[0]}.json"`,
         },
       });
     }
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(csv, {
       headers: {
         "Content-Type": "text/csv",
-        "Content-Disposition": `attachment; filename="wp-manager-sites-${new Date().toISOString().split("T")[0]}.csv"`,
+        "Content-Disposition": `attachment; filename="wp-jupiter-sites-${new Date().toISOString().split("T")[0]}.csv"`,
       },
     });
   } catch (error) {

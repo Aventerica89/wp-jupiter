@@ -1,6 +1,6 @@
 /**
  * WordPress REST API client
- * Supports both Application Passwords (WP 5.6+) and WP Manager Connector plugin
+ * Supports both Application Passwords (WP 5.6+) and WP Jupiter Connector plugin
  */
 
 interface WPRequestOptions {
@@ -64,7 +64,7 @@ class WordPressAPI {
   }
 
   /**
-   * Check if the WP Manager Connector plugin is installed and configured
+   * Check if the WP Jupiter Connector plugin is installed and configured
    */
   private async checkConnector(): Promise<boolean> {
     if (this.connectorAvailable !== null) {

@@ -112,6 +112,14 @@ export const activityLog = sqliteTable("activity_log", {
       "server_added",
       "server_updated",
       "provider_added",
+      "github_push",
+      "github_pull",
+      "github_commit",
+      "github_repo_connected",
+      "license_activated",
+      "license_deactivated",
+      "license_injected",
+      "license_validation",
       "error",
     ],
   }).notNull(),
@@ -175,6 +183,8 @@ export const sitesRelations = relations(sites, ({ one, many }) => ({
   performanceMetrics: many(performanceMetrics),
   userPermissions: many(userSitePermissions),
   clientAccess: many(clientSiteAccess),
+  githubConnections: many(siteGithubConnections),
+  licenseAssignments: many(siteLicenseAssignments),
 }));
 
 export const pluginsRelations = relations(plugins, ({ one }) => ({
@@ -440,6 +450,162 @@ export const clientUsersRelations = relations(clientUsers, ({ many }) => ({
   siteAccess: many(clientSiteAccess),
 }));
 
+// GitHub repositories for version control
+export const githubRepos = sqliteTable("github_repos", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(), // Display name: 'Client Sites Repo'
+  owner: text("owner").notNull(), // GitHub username/org: 'mycompany'
+  repo: text("repo").notNull(), // Repository name: 'wordpress-sites'
+  defaultBranch: text("default_branch").default("main"),
+  accessToken: text("access_token").notNull(), // Encrypted GitHub PAT
+  webhookSecret: text("webhook_secret"), // For receiving push events
+  lastSyncedAt: text("last_synced_at"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Link sites to GitHub repos (a site can have one repo, repo can serve multiple sites)
+export const siteGithubConnections = sqliteTable("site_github_connections", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  siteId: integer("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  repoId: integer("repo_id").notNull().references(() => githubRepos.id, { onDelete: "cascade" }),
+  branch: text("branch").default("main"), // Branch for this site (e.g., 'production', 'staging')
+  path: text("path").default("/"), // Path in repo for this site's files
+  syncDirection: text("sync_direction", { enum: ["push", "pull", "bidirectional"] }).default("push"),
+  autoSync: integer("auto_sync", { mode: "boolean" }).default(false),
+  lastCommitSha: text("last_commit_sha"),
+  lastPushedAt: text("last_pushed_at"),
+  lastPulledAt: text("last_pulled_at"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// GitHub commit history for tracking changes
+export const githubCommits = sqliteTable("github_commits", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  connectionId: integer("connection_id").notNull().references(() => siteGithubConnections.id, { onDelete: "cascade" }),
+  sha: text("sha").notNull(),
+  message: text("message").notNull(),
+  author: text("author"),
+  authorEmail: text("author_email"),
+  filesChanged: text("files_changed"), // JSON array of changed file paths
+  additions: integer("additions"),
+  deletions: integer("deletions"),
+  committedAt: text("committed_at").notNull(),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// License vendors (WooCommerce, EDD, Freemius, etc.)
+export const licenseVendors = sqliteTable("license_vendors", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(), // 'Elegant Themes', 'WPForms'
+  slug: text("slug").notNull().unique(), // 'elegant-themes', 'wpforms'
+  website: text("website"),
+  apiEndpoint: text("api_endpoint"), // For automated license validation
+  apiType: text("api_type", { enum: ["woocommerce", "edd", "freemius", "envato", "custom"] }),
+  notes: text("notes"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Plugin/theme licenses (centralized license storage)
+export const pluginLicenses = sqliteTable("plugin_licenses", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  vendorId: integer("vendor_id").references(() => licenseVendors.id, { onDelete: "set null" }),
+  name: text("name").notNull(), // 'WPForms Pro License', 'Divi Lifetime'
+  pluginSlug: text("plugin_slug"), // 'wpforms-lite' - matches plugins.slug
+  themeSlug: text("theme_slug"), // 'divi' - matches themes.slug
+  licenseKey: text("license_key").notNull(), // Encrypted license key
+  licenseEmail: text("license_email"), // Email associated with license
+  licenseUrl: text("license_url"), // URL for license management
+  maxActivations: integer("max_activations"), // null = unlimited
+  currentActivations: integer("current_activations").default(0),
+  purchaseDate: text("purchase_date"),
+  expiresAt: text("expires_at"), // null = lifetime
+  status: text("status", { enum: ["active", "expired", "suspended", "invalid"] }).default("active"),
+  lastValidatedAt: text("last_validated_at"),
+  notes: text("notes"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// Track which licenses are assigned to which sites
+export const siteLicenseAssignments = sqliteTable("site_license_assignments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  siteId: integer("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  licenseId: integer("license_id").notNull().references(() => pluginLicenses.id, { onDelete: "cascade" }),
+  activatedAt: text("activated_at").$defaultFn(() => new Date().toISOString()),
+  deactivatedAt: text("deactivated_at"),
+  status: text("status", { enum: ["active", "inactive", "failed"] }).default("active"),
+  activationResponse: text("activation_response"), // JSON response from license server
+  lastInjectedAt: text("last_injected_at"), // When license was last pushed to site
+});
+
+// License injection history (for audit trail)
+export const licenseInjectionLog = sqliteTable("license_injection_log", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  assignmentId: integer("assignment_id").notNull().references(() => siteLicenseAssignments.id, { onDelete: "cascade" }),
+  action: text("action", { enum: ["inject", "activate", "deactivate", "validate", "refresh"] }).notNull(),
+  status: text("status", { enum: ["success", "failed"] }).notNull(),
+  details: text("details"), // JSON with response/error details
+  triggeredBy: text("triggered_by", { enum: ["manual", "clone", "restore", "sync", "scheduled"] }).default("manual"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// GitHub repos relations
+export const githubReposRelations = relations(githubRepos, ({ many }) => ({
+  siteConnections: many(siteGithubConnections),
+}));
+
+export const siteGithubConnectionsRelations = relations(siteGithubConnections, ({ one, many }) => ({
+  site: one(sites, {
+    fields: [siteGithubConnections.siteId],
+    references: [sites.id],
+  }),
+  repo: one(githubRepos, {
+    fields: [siteGithubConnections.repoId],
+    references: [githubRepos.id],
+  }),
+  commits: many(githubCommits),
+}));
+
+export const githubCommitsRelations = relations(githubCommits, ({ one }) => ({
+  connection: one(siteGithubConnections, {
+    fields: [githubCommits.connectionId],
+    references: [siteGithubConnections.id],
+  }),
+}));
+
+// License relations
+export const licenseVendorsRelations = relations(licenseVendors, ({ many }) => ({
+  licenses: many(pluginLicenses),
+}));
+
+export const pluginLicensesRelations = relations(pluginLicenses, ({ one, many }) => ({
+  vendor: one(licenseVendors, {
+    fields: [pluginLicenses.vendorId],
+    references: [licenseVendors.id],
+  }),
+  assignments: many(siteLicenseAssignments),
+}));
+
+export const siteLicenseAssignmentsRelations = relations(siteLicenseAssignments, ({ one, many }) => ({
+  site: one(sites, {
+    fields: [siteLicenseAssignments.siteId],
+    references: [sites.id],
+  }),
+  license: one(pluginLicenses, {
+    fields: [siteLicenseAssignments.licenseId],
+    references: [pluginLicenses.id],
+  }),
+  injectionLogs: many(licenseInjectionLog),
+}));
+
+export const licenseInjectionLogRelations = relations(licenseInjectionLog, ({ one }) => ({
+  assignment: one(siteLicenseAssignments, {
+    fields: [licenseInjectionLog.assignmentId],
+    references: [siteLicenseAssignments.id],
+  }),
+}));
+
 // Type exports
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
@@ -473,3 +639,16 @@ export type NewUser = typeof users.$inferInsert;
 export type ClientUser = typeof clientUsers.$inferSelect;
 export type NewClientUser = typeof clientUsers.$inferInsert;
 export type WhiteLabelSettings = typeof whiteLabelSettings.$inferSelect;
+export type GithubRepo = typeof githubRepos.$inferSelect;
+export type NewGithubRepo = typeof githubRepos.$inferInsert;
+export type SiteGithubConnection = typeof siteGithubConnections.$inferSelect;
+export type NewSiteGithubConnection = typeof siteGithubConnections.$inferInsert;
+export type GithubCommit = typeof githubCommits.$inferSelect;
+export type NewGithubCommit = typeof githubCommits.$inferInsert;
+export type LicenseVendor = typeof licenseVendors.$inferSelect;
+export type NewLicenseVendor = typeof licenseVendors.$inferInsert;
+export type PluginLicense = typeof pluginLicenses.$inferSelect;
+export type NewPluginLicense = typeof pluginLicenses.$inferInsert;
+export type SiteLicenseAssignment = typeof siteLicenseAssignments.$inferSelect;
+export type NewSiteLicenseAssignment = typeof siteLicenseAssignments.$inferInsert;
+export type LicenseInjectionLog = typeof licenseInjectionLog.$inferSelect;

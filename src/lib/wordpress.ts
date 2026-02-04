@@ -3,6 +3,11 @@
  * Supports both Application Passwords (WP 5.6+) and WP Jupiter Connector plugin
  */
 
+import { db } from "./db";
+import { sites } from "./db/schema";
+import { eq } from "drizzle-orm";
+import { decrypt } from "./crypto";
+
 interface WPRequestOptions {
   siteUrl: string;
   username: string;
@@ -342,6 +347,104 @@ class WordPressAPI {
       method: "DELETE",
     });
   }
+
+  /**
+   * Inject a plugin or theme license
+   * Requires the WP Jupiter Connector plugin
+   */
+  async injectLicense(licenseData: {
+    pluginSlug?: string;
+    themeSlug?: string;
+    licenseKey: string;
+    licenseEmail?: string;
+    vendorType?: string;
+  }): Promise<{ success: boolean; message: string; activated?: boolean }> {
+    const hasConnector = await this.checkConnector();
+
+    if (!hasConnector) {
+      throw new Error(
+        "License injection requires the WP Jupiter Connector plugin to be installed and configured"
+      );
+    }
+
+    return this.connectorRequest<{ success: boolean; message: string; activated?: boolean }>(
+      "/licenses/inject",
+      {
+        method: "POST",
+        body: JSON.stringify(licenseData),
+      }
+    );
+  }
+
+  /**
+   * Get all licenses currently activated on the site
+   * Requires the WP Jupiter Connector plugin
+   */
+  async getLicenses(): Promise<
+    Array<{
+      plugin_slug?: string;
+      theme_slug?: string;
+      status: "active" | "inactive" | "expired";
+      expiry?: string;
+    }>
+  > {
+    const hasConnector = await this.checkConnector();
+
+    if (!hasConnector) {
+      throw new Error(
+        "License management requires the WP Jupiter Connector plugin"
+      );
+    }
+
+    return this.connectorRequest("/licenses");
+  }
+
+  /**
+   * Deactivate a license on the site
+   * Requires the WP Jupiter Connector plugin
+   */
+  async deactivateLicense(
+    pluginSlug?: string,
+    themeSlug?: string
+  ): Promise<{ success: boolean; message: string }> {
+    const hasConnector = await this.checkConnector();
+
+    if (!hasConnector) {
+      throw new Error(
+        "License management requires the WP Jupiter Connector plugin"
+      );
+    }
+
+    return this.connectorRequest("/licenses/deactivate", {
+      method: "POST",
+      body: JSON.stringify({
+        plugin_slug: pluginSlug,
+        theme_slug: themeSlug,
+      }),
+    });
+  }
+}
+
+/**
+ * Create a WordPress API client from a site ID
+ * Fetches credentials from the database and decrypts the password
+ */
+export async function createWordPressClient(siteId: number): Promise<WordPressAPI> {
+  const site = await db.query.sites.findFirst({
+    where: eq(sites.id, siteId),
+  });
+
+  if (!site) {
+    throw new Error(`Site with ID ${siteId} not found`);
+  }
+
+  const password = decrypt(site.apiPassword);
+
+  return new WordPressAPI({
+    siteUrl: site.url,
+    username: site.apiUsername,
+    password,
+  });
 }
 
 export { WordPressAPI };

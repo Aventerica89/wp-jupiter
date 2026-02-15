@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=\"$CLAUDE_TOOL_ARG_FILE_PATH\"; if [ -n \"$FILE\" ] && echo \"$FILE\" | grep -qE '\\.(ts|tsx|js|jsx|mjs)$'; then npx eslint --fix \"$FILE\" 2>/dev/null; fi"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=\"$CLAUDE_TOOL_ARG_FILE_PATH\"; if [ -n \"$FILE\" ] && echo \"$FILE\" | grep -qE '\\.env\\.local$'; then echo 'BLOCKED: Do not edit .env.local directly. Use `npm run env:inject` to generate from .env.local.tpl via 1Password.' >&2; exit 2; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
